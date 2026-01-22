@@ -1,20 +1,58 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Settings, SettingsContextType } from '../types';
 
 const defaultSettings: Settings = {
   enableTailwind: true,
   enableBootstrap: false,
+  enableAdminPanel: false,
+  enableSEO: false,
+  enablePWA: false,
+  enableFirebaseRules: false,
+  enableCustomCursor: false,
+  enableSecureMode: false,
+  enableMobileResponsive: true,
+  enableDesktopResponsive: true,
+  customDomain: '',
   firebaseConfig: '',
-  selectedModel: 'gemini-3-flash-preview'
+  selectedModel: 'gemini-3-flash-preview', 
+  imgBBApiKey: '',
+  googleApiKey: '' 
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [settings, setSettings] = useState<Settings>(() => {
+     try {
+         const savedGlobal = localStorage.getItem('wajid_ai_global_settings');
+         if (savedGlobal) {
+             const parsed = JSON.parse(savedGlobal);
+             // Merge saved settings with defaults
+             return { ...defaultSettings, ...parsed };
+         }
+     } catch (e) {
+         console.error("Failed to load global settings", e);
+     }
+     return defaultSettings;
+  });
 
   const updateSettings = (newSettings: Partial<Settings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
+    setSettings(prev => {
+        const updated = { ...prev, ...newSettings };
+        
+        // Persist Global Settings (Cursor, API Key, Model Selection, ImgBB)
+        // We selectively save keys that should be global
+        const globalToSave = {
+            enableCustomCursor: updated.enableCustomCursor,
+            googleApiKey: updated.googleApiKey,
+            selectedModel: updated.selectedModel,
+            imgBBApiKey: updated.imgBBApiKey
+        };
+        
+        localStorage.setItem('wajid_ai_global_settings', JSON.stringify(globalToSave));
+        
+        return updated;
+    });
   };
 
   return (

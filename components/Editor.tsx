@@ -15,7 +15,6 @@ const EditorWindow: React.FC<EditorWindowProps> = ({ onToggleSidebar, isSidebarO
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
 
-  // Sync local state when selected file changes or file content updates from AI
   useEffect(() => {
     if (selectedFile) {
       setContent(selectedFile.content);
@@ -34,8 +33,22 @@ const EditorWindow: React.FC<EditorWindowProps> = ({ onToggleSidebar, isSidebarO
   const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
+
+    // Define Custom Theme for "Sky Blue Curtain" Selection
+    monaco.editor.defineTheme('wai-sky-blue', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [],
+        colors: {
+            'editor.background': '#1e1e1e',
+            'editor.selectionBackground': '#38bdf860', 
+            'editor.inactiveSelectionBackground': '#38bdf830',
+            'editor.lineHighlightBackground': '#38bdf810',
+        }
+    });
+
+    monaco.editor.setTheme('wai-sky-blue');
     
-    // Listen for selection changes
     editor.onDidChangeCursorSelection((e) => {
         const selection = editor.getSelection();
         const model = editor.getModel();
@@ -88,16 +101,19 @@ const EditorWindow: React.FC<EditorWindowProps> = ({ onToggleSidebar, isSidebarO
 
   const selectAll = () => {
     if (editorRef.current) {
-      editorRef.current.trigger('source', 'selectAll', null);
+      editorRef.current.setSelection(editorRef.current.getModel().getFullModelRange());
       setIsAllSelected(true);
+      editorRef.current.focus();
     }
   };
 
   const clearContent = () => {
     if (editorRef.current && selectedFile) {
-        const confirmClear = window.confirm("Are you sure you want to clear this file?");
+        const confirmClear = window.confirm(`Are you sure you want to clear ALL content from ${selectedFile.name}?`);
         if (confirmClear) {
             handleEditorChange('');
+            // Ensure editor focuses back
+            editorRef.current.focus();
         }
     }
   };
@@ -146,13 +162,13 @@ const EditorWindow: React.FC<EditorWindowProps> = ({ onToggleSidebar, isSidebarO
                     </span>
                     <span className="text-[10px] text-gray-500 uppercase tracking-wider">{selectedFile.language}</span>
                 </div>
-                {isAllSelected && <span className="text-[10px] text-green-400 font-bold bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">ALL SELECTED</span>}
+                {isAllSelected && <span className="text-[10px] text-sky-400 font-bold bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20 shadow-sm shadow-sky-500/20">ALL SELECTED</span>}
             </div>
             
             <div className="flex items-center gap-2 bg-[#1e1e1e] p-1 rounded-lg border border-[#333]">
                 <button 
                   onClick={selectAll} 
-                  className={`p-1.5 rounded-md transition-all ${isAllSelected ? 'text-green-400 bg-green-500/10' : 'text-gray-400 hover:text-white hover:bg-white/10'}`} 
+                  className={`p-1.5 rounded-md transition-all ${isAllSelected ? 'text-sky-400 bg-sky-500/10' : 'text-gray-400 hover:text-white hover:bg-white/10'}`} 
                   title="Select All"
                 >
                     <CheckSquare className="w-4 h-4" />
@@ -165,35 +181,38 @@ const EditorWindow: React.FC<EditorWindowProps> = ({ onToggleSidebar, isSidebarO
                     <Clipboard className="w-4 h-4" />
                 </button>
                  <div className="w-px h-4 bg-[#333]"></div>
-                <button onClick={clearContent} className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-all" title="Clear File">
+                <button onClick={clearContent} className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-all" title="Clear File Content">
                     <Trash2 className="w-4 h-4" />
                 </button>
             </div>
         </div>
 
-      <Editor
-        height="100%"
-        theme="vs-dark"
-        path={selectedFile.name}
-        language={selectedFile.language}
-        value={content}
-        onChange={handleEditorChange}
-        onMount={handleEditorDidMount}
-        options={{
-          minimap: { enabled: false },
-          fontSize: 14,
-          fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-          fontLigatures: true,
-          wordWrap: 'on',
-          scrollBeyondLastLine: false,
-          padding: { top: 20, bottom: 20 },
-          lineHeight: 22,
-          renderLineHighlight: 'all',
-          smoothScrolling: true,
-          cursorBlinking: 'smooth',
-          cursorSmoothCaretAnimation: 'on'
-        }}
-      />
+        {/* Editor Area */}
+        <div className="flex-1 relative">
+            <Editor
+                height="100%"
+                language={selectedFile.language === 'javascript' ? 'javascript' : selectedFile.language === 'css' ? 'css' : selectedFile.language === 'html' ? 'html' : 'json'}
+                value={content}
+                theme="wai-sky-blue"
+                onChange={handleEditorChange}
+                onMount={handleEditorDidMount}
+                options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    wordWrap: 'on', // FIXED: Prevents horizontal scrolling issues
+                    padding: { top: 16, bottom: 16 },
+                    fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
+                    cursorBlinking: 'smooth',
+                    smoothScrolling: true,
+                    contextmenu: true,
+                    // Optimization for large files
+                    renderValidationDecorations: 'on',
+                }}
+            />
+        </div>
     </div>
   );
 };

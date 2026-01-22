@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useFile } from '../context/FileContext';
 import { 
   FileCode, 
@@ -8,15 +8,19 @@ import {
   X,
   FileJson,
   FileType,
-  FolderOpen
+  FolderOpen,
+  Upload,
+  Image,
+  Video
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
-  const { files, selectedFile, selectFile, addFile, deleteFile, renameFile } = useFile();
+  const { files, selectedFile, selectFile, addFile, deleteFile, renameFile, importFile } = useFile();
   const [isCreating, setIsCreating] = useState(false);
   const [newFileName, setNewFileName] = useState('');
   const [editingFile, setEditingFile] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +29,14 @@ const Sidebar: React.FC = () => {
       setNewFileName('');
       setIsCreating(false);
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files) {
+          Array.from(e.target.files).forEach(file => {
+              importFile(file);
+          });
+      }
   };
 
   const startRenaming = (name: string) => {
@@ -44,6 +56,8 @@ const Sidebar: React.FC = () => {
     if (name.endsWith('.css')) return <FileCode className="w-4 h-4 text-blue-500" />;
     if (name.endsWith('.js') || name.endsWith('.ts')) return <FileCode className="w-4 h-4 text-yellow-500" />;
     if (name.endsWith('.json')) return <FileJson className="w-4 h-4 text-green-500" />;
+    if (name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) return <Image className="w-4 h-4 text-purple-400" />;
+    if (name.match(/\.(mp4|webm|ogg)$/i)) return <Video className="w-4 h-4 text-pink-400" />;
     return <FileType className="w-4 h-4 text-gray-400" />;
   };
 
@@ -56,13 +70,29 @@ const Sidebar: React.FC = () => {
                 <FolderOpen className="w-4 h-4 text-blue-400" />
                 <span className="text-sm">Explorer</span>
              </div>
-             <button 
-              onClick={() => setIsCreating(true)}
-              className="p-1.5 hover:bg-white/10 rounded-md text-gray-400 hover:text-white transition-colors"
-              title="New File"
-            >
-              <FilePlus className="w-4 h-4" />
-            </button>
+             <div className="flex items-center gap-1">
+                <input 
+                    type="file" 
+                    multiple 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    onChange={handleFileUpload}
+                />
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-1.5 hover:bg-white/10 rounded-md text-gray-400 hover:text-white transition-colors"
+                  title="Upload Files"
+                >
+                  <Upload className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => setIsCreating(true)}
+                  className="p-1.5 hover:bg-white/10 rounded-md text-gray-400 hover:text-white transition-colors"
+                  title="New File"
+                >
+                  <FilePlus className="w-4 h-4" />
+                </button>
+             </div>
         </div>
       </div>
 

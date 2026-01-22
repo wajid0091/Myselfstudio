@@ -1,5 +1,5 @@
 {
-  "name": "Gemini Web Builder IDE",
+  "name": "MYSELF IDE",
   "description": "A browser-based AI IDE that generates web apps using Gemini, React, and Monaco Editor with live preview.",
   "requestFramePermissions": []
 }

@@ -2,8 +2,37 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Wajid Ali Web Builder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+    
+    <!-- PRIMARY SEO -->
+    <title>MYSELF IDE - AI Powered Web Builder & Code Assistant</title>
+    <meta name="description" content="Build websites instantly with MYSELF IDE. The best AI-powered HTML, CSS, and React editor with live preview. Generate code, edit projects, and publish online." />
+    <meta name="keywords" content="MYSELF IDE, Myself IDE PK, AI Web Builder, HTML Editor, Code Assistant, AI Code Generator, Website Builder, React IDE, Tailwind Editor, Online Compiler, Web Development Pakistan" />
+    <meta name="author" content="MYSELF IDE" />
+    <link rel="canonical" href="https://myselfide.online/" />
+
+    <!-- OPEN GRAPH / FACEBOOK -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://myselfide.online/" />
+    <meta property="og:title" content="MYSELF IDE - AI Powered Web Builder" />
+    <meta property="og:description" content="Create stunning websites with AI. Smart code generation, live preview, and full project management." />
+    <meta property="og:image" content="/myselfideicon.png" />
+
+    <!-- TWITTER -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://myselfide.online/" />
+    <meta property="twitter:title" content="MYSELF IDE - AI Powered Web Builder" />
+    <meta property="twitter:description" content="Create stunning websites with AI. Smart code generation, live preview, and full project management." />
+    <meta property="twitter:image" content="/myselfideicon.png" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#1e1e1e" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="/myselfideicon.png" />
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -23,30 +52,66 @@
       }
     </script>
     <style>
-      body { margin: 0; padding: 0; background-color: #1e1e1e; color: #cccccc; overflow: hidden; }
-      /* Custom scrollbar for webkit */
-      ::-webkit-scrollbar { width: 10px; height: 10px; }
-      ::-webkit-scrollbar-track { background: #1e1e1e; }
-      ::-webkit-scrollbar-thumb { background: #444; border-radius: 5px; }
-      ::-webkit-scrollbar-thumb:hover { background: #555; }
+      html, body { 
+        margin: 0; 
+        padding: 0; 
+        background-color: #1e1e1e; 
+        color: #cccccc; 
+        overflow: hidden; 
+        height: 100vh; /* Fallback */
+        height: 100dvh; /* Mobile Fix */
+        width: 100vw;
+      }
+      #root {
+        height: 100%;
+        width: 100%;
+      }
+      
+      /* Hide Scrollbar but allow scrolling */
+      .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+      }
+      .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
+
+      /* Custom scrollbar for Editor/Sidebar (Where needed) */
+      .custom-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: #1e1e1e; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #444; border-radius: 5px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
     </style>
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
     "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
-    "react-markdown": "https://esm.sh/react-markdown@^10.1.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "react-markdown": "https://esm.sh/react-markdown@^10.1.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@monaco-editor/react": "https://esm.sh/@monaco-editor/react@^4.7.0",
     "jszip": "https://esm.sh/jszip@^3.10.1",
-    "file-saver": "https://esm.sh/file-saver@^2.0.5",
-    "@monaco-editor/react": "https://esm.sh/@monaco-editor/react@^4.7.0"
+    "@tailwindcss/typography": "https://esm.sh/@tailwindcss/typography@^0.5.19",
+    "firebase/": "https://esm.sh/firebase@^12.8.0/"
   }
 }
 </script>
 </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('SW registered', reg))
+            .catch(err => console.log('SW registration failed', err));
+        });
+      }
+    </script>
   </body>
 </html>
