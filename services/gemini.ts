@@ -18,13 +18,22 @@ export const generateCode = async (
   signal?: AbortSignal
 ): Promise<{ text: string; files: Record<string, string> }> => {
   
-  // 1. VALIDATE API KEY
-  const apiKey = settings.googleApiKey && settings.googleApiKey.trim().length > 10
-      ? settings.googleApiKey 
-      : process.env.API_KEY;
+  // 1. RESOLVE API KEY (Priority: User Settings > Netlify Env > Empty)
+  let apiKey = '';
+  
+  // Check User Setting First
+  if (settings.googleApiKey && settings.googleApiKey.trim().length > 10) {
+      apiKey = settings.googleApiKey.trim();
+  } 
+  // Fallback to System/Netlify Key
+  else {
+      // @ts-ignore
+      apiKey = process.env.API_KEY || process.env.VITE_API_KEY || '';
+  }
 
   if (!apiKey || apiKey === 'undefined' || apiKey === '') {
-      throw new Error("API Key is missing. Please add your Key in Settings.");
+      console.error("DEBUG: API Key is missing. Settings:", settings.googleApiKey, "Env:", process.env.API_KEY);
+      throw new Error("API Key is missing. Please add your Key in Settings or configure Environment Variables.");
   }
 
   const ai = new GoogleGenAI({ apiKey: apiKey });
