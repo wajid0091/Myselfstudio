@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { FileProvider, useFile } from './context/FileContext';
 import { SettingsProvider } from './context/SettingsContext';
@@ -31,14 +32,10 @@ const IDE: React.FC = () => {
   const handleDownload = async () => {
     const zip = new JSZip();
     
-    // Add all existing files
     files.forEach(file => {
       zip.file(file.name, file.content);
     });
 
-    // --- NETLIFY / VERCEL SPA FIX ---
-    // If _redirects doesn't exist, we add it automatically.
-    // This tells Netlify to redirect all routes to index.html so React Router works.
     if (!files.some(f => f.name === '_redirects')) {
         zip.file('_redirects', '/* /index.html 200');
     }
@@ -127,14 +124,20 @@ const IDE: React.FC = () => {
         {showSidebar && <Sidebar />}
 
         <div className="flex-1 flex flex-col min-w-0 relative h-full">
-          <div className="flex-1 flex flex-col overflow-hidden relative">
+          {/* Editor Area */}
+          <div className="flex-1 overflow-hidden relative">
             <EditorWindow 
                 onToggleSidebar={() => setShowSidebar(!showSidebar)} 
                 isSidebarOpen={showSidebar}
             />
           </div>
           
-          <div className={`border-t border-ide-border transition-all duration-300 z-40 bg-[#16181D] flex flex-col ${chatExpanded ? 'h-[60%] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]' : 'h-auto'}`}>
+          {/* Chat Interface Container - Height refined for mobile visibility */}
+          <div 
+            className={`border-t border-ide-border transition-all duration-300 z-40 bg-[#16181D] flex flex-col shrink-0 ${
+              chatExpanded ? 'h-[65%] md:h-[60%] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]' : 'h-12'
+            }`}
+          >
             <ChatInterface 
                 isOpen={chatExpanded} 
                 onToggle={() => setChatExpanded(!chatExpanded)} 
@@ -147,7 +150,7 @@ const IDE: React.FC = () => {
       {activeProjectId && <PublishModal isOpen={isPublishModalOpen} onClose={() => setIsPublishModalOpen(false)} projectId={activeProjectId} />}
 
       {isFullScreenPreview && (
-        <div className="fixed inset-0 z-50 bg-ide-bg flex flex-col animate-in fade-in duration-200 h-[100dvh]">
+        <div className="fixed inset-0 z-50 bg-ide-bg flex flex-col animate-in fade-in duration-200 h-screen h-[100dvh]">
           <div className="w-full h-full bg-white relative">
              <Preview className="w-full h-full" onClose={() => setIsFullScreenPreview(false)} isFullScreen={true} />
           </div>
@@ -169,7 +172,6 @@ const Main: React.FC = () => {
         );
     }
 
-    // Guest Mode allowed, so just show Dashboard or IDE
     return activeProjectId ? <IDE /> : <Dashboard />;
 }
 

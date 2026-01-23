@@ -161,11 +161,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
 
   const containerClasses = isFullScreen 
     ? 'fixed inset-0 z-[100] bg-[#16181D] flex flex-col' 
-    : `flex flex-col bg-[#16181D] h-full overflow-hidden transition-all duration-300 ${isOpen ? 'flex-1 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]' : 'h-12 shrink-0'}`;
+    : `flex flex-col bg-[#16181D] h-full overflow-hidden transition-all duration-300 ${isOpen ? 'flex-1' : 'h-12 shadow-[0_-4px_12px_rgba(0,0,0,0.4)]'}`;
 
   return (
-    <div className={containerClasses} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-      {/* Header / Toggle Handle */}
+    <div className={containerClasses} style={{ paddingBottom: isOpen ? 'env(safe-area-inset-bottom)' : '0' }}>
+      {/* Header / Toggle Handle - Critical for mobile visibility */}
       <div 
         className="h-12 bg-[#1E2028] border-b border-white/5 flex items-center justify-between px-4 cursor-pointer shrink-0 select-none z-50 sticky top-0" 
         onClick={isFullScreen ? undefined : onToggle}
@@ -286,7 +286,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
 
           {/* Prompt Input Area */}
           <div className="p-4 bg-[#1E2028] border-t border-white/5 shrink-0">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto pb-safe">
                 <form onSubmit={handleSend} className="relative bg-[#16181D] border border-white/10 rounded-2xl overflow-hidden focus-within:border-blue-500/50 shadow-2xl transition-all">
                     <div className="flex items-end">
                         <button type="button" onClick={() => fileInputRef.current?.click()} className="p-4 text-gray-400 hover:text-blue-400">
