@@ -18,12 +18,13 @@ export const generateCode = async (
   signal?: AbortSignal
 ): Promise<{ text: string; files: Record<string, string> }> => {
   
+  // Priority: User's BYOK Key -> Netlify Env API_KEY -> System Variable
   const apiKey = (settings.googleApiKey && settings.googleApiKey.trim().length > 10) 
     ? settings.googleApiKey.trim() 
-    : (process.env.API_KEY || '');
+    : (process.env.API_KEY || process.env.VITE_API_KEY || '');
 
   if (!apiKey) {
-      throw new Error("API Key is missing. Please provide a Gemini API Key in App Settings.");
+      throw new Error("Gemini API Key missing. Please set it in Netlify Env or App Settings.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -52,11 +53,11 @@ Generate a complete, professional web application based on the user's settings.
 ### OUTPUT EXPECTATIONS:
 - Always return COMPLETE files. No placeholders.
 - Response must be a valid JSON object.
-- The "message" should explain what was created and remind the user about the separate "admin.html" if generated.
+- Explain what was created in the "message" field.
 
 ### JSON RESPONSE FORMAT:
 {
-  "message": "Summary of updates...",
+  "message": "Summary...",
   "files": [
     { "name": "index.html", "content": "..." },
     { "name": "style.css", "content": "..." },
@@ -70,21 +71,10 @@ Generate a complete, professional web application based on the user's settings.
 
   const selectedModel = settings.selectedModel || 'gemini-3-pro-preview';
 
-  const fullPrompt = `
-[CONTEXT]
-${fileContext}
-
-[USER REQUEST]
-"${prompt}"
-
-[INSTRUCTIONS]
-Build a realistic, clean application. If Admin Panel is requested, it goes ONLY into "admin.html". If SEO is on, include sitemap and robots. Ensure high-quality UI/UX.
-`;
-
   try {
     const response = await ai.models.generateContent({
       model: selectedModel,
-      contents: { parts: [{ text: fullPrompt }] },
+      contents: { parts: [{ text: `[CONTEXT]\n${fileContext}\n\n[USER REQUEST]\n"${prompt}"` }] },
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         temperature: 0.1,
@@ -107,7 +97,7 @@ Build a realistic, clean application. If Admin Panel is requested, it goes ONLY 
     }
 
     return {
-      text: result.message || "Project architecture updated.",
+      text: result.message || "Updated successfully.",
       files: modifications
     };
   } catch (err: any) {

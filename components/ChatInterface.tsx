@@ -75,7 +75,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
     } else {
       addFile(fileName, content);
     }
-    alert(`${fileName} applied to editor!`);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,12 +161,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
 
   const containerClasses = isFullScreen 
     ? 'fixed inset-0 z-[100] bg-[#16181D] flex flex-col' 
-    : `flex flex-col bg-[#16181D] h-full overflow-hidden transition-all duration-300 ${isOpen ? 'flex-1' : 'h-12 shrink-0'}`;
+    : `flex flex-col bg-[#16181D] h-full overflow-hidden transition-all duration-300 ${isOpen ? 'flex-1 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]' : 'h-12 shrink-0'}`;
 
   return (
-    <div className={containerClasses}>
-      {/* Header */}
-      <div className="h-12 bg-[#1E2028] border-b border-white/5 flex items-center justify-between px-4 cursor-pointer shrink-0 select-none" onClick={isFullScreen ? undefined : onToggle}>
+    <div className={containerClasses} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      {/* Header / Toggle Handle */}
+      <div 
+        className="h-12 bg-[#1E2028] border-b border-white/5 flex items-center justify-between px-4 cursor-pointer shrink-0 select-none z-50 sticky top-0" 
+        onClick={isFullScreen ? undefined : onToggle}
+      >
         <div className="flex items-center gap-3">
           <Sparkles className={`w-4 h-4 text-blue-400 ${loading ? 'animate-pulse' : ''}`} />
           <span className="text-sm font-bold text-gray-200">AI Code Assistant</span>
@@ -189,7 +191,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
                     <button 
                         onClick={(e) => { e.stopPropagation(); setIsFullScreen(!isFullScreen); }}
                         className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-md transition-all"
-                        title={isFullScreen ? "Minimize" : "Full Screen"}
                     >
                         {isFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                     </button>
@@ -211,8 +212,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
             {messages.length === 0 && !loading && (
               <div className="h-full flex flex-col items-center justify-center text-center opacity-30 p-10">
                 <Wand2 className="w-16 h-16 text-blue-400 mb-4" />
-                <p className="text-lg font-bold">Ask me to build or update your app!</p>
-                <p className="text-xs max-w-xs mt-2 italic text-gray-400">"Create a landing page with a separate admin.html and SEO files"</p>
+                <p className="text-lg font-bold">Describe your feature or bug</p>
+                <p className="text-xs max-w-xs mt-2 italic text-gray-400">"Create a login page with a separate admin.html for dashboard management"</p>
               </div>
             )}
 
@@ -227,7 +228,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
                   {msg.role === 'user' && (
                     <button 
                       onClick={() => copyToClipboard(msg.content, `msg-${i}`)}
-                      className="absolute -left-10 top-2 p-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white transition-all bg-[#1E2028] rounded-full border border-white/5"
+                      className="absolute -left-10 top-2 p-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white transition-all bg-[#1E2028] rounded-full border border-white/5 shadow-lg"
                     >
                       {copiedId === `msg-${i}` ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                     </button>
@@ -239,38 +240,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
                     {msg.generatedFiles.map((file, fIdx) => {
                       const isExpanded = expandedFiles[`${i}-${file.name}`];
                       return (
-                        <div key={file.name} className={`bg-[#1E2028]/80 border border-white/5 rounded-2xl overflow-hidden shadow-2xl transition-all ${isExpanded ? 'md:col-span-2' : ''}`}>
+                        <div key={file.name} className={`bg-[#1E2028]/90 border border-white/5 rounded-2xl overflow-hidden shadow-2xl transition-all ${isExpanded ? 'md:col-span-2' : ''}`}>
                           <div className="flex items-center justify-between p-3 md:p-4 bg-white/5">
                             <div className="flex items-center gap-3 overflow-hidden">
                               <div className="p-2 bg-blue-500/10 rounded-lg shrink-0"><FileCode2 className="w-4 h-4 text-blue-400" /></div>
                               <span className="text-xs font-mono font-bold text-gray-300 truncate">{file.name}</span>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                              <button 
-                                onClick={() => toggleFileView(i, file.name)}
-                                className="px-2 py-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-all flex items-center gap-2 text-[9px] md:text-[10px] font-bold uppercase"
-                              >
+                              <button onClick={() => toggleFileView(i, file.name)} className="px-2 py-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-all">
                                 {isExpanded ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                               </button>
-                              <button 
-                                onClick={() => applyFileToEditor(file.name, file.content)}
-                                className="px-2 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all flex items-center gap-2 text-[9px] md:text-[10px] font-bold uppercase shadow-lg shadow-blue-900/40"
-                              >
-                                <Download className="w-3.5 h-3.5" /> Apply
+                              <button onClick={() => applyFileToEditor(file.name, file.content)} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-bold uppercase transition-all shadow-lg shadow-blue-900/40">
+                                Apply
                               </button>
                             </div>
                           </div>
                           {isExpanded && (
                             <div className="relative group/code bg-black/40">
-                              <pre className="p-5 text-[12px] font-mono text-gray-300 overflow-x-auto custom-scrollbar max-h-[400px]">
+                              <pre className="p-5 text-[11px] font-mono text-gray-300 overflow-x-auto custom-scrollbar max-h-[400px]">
                                 {file.content}
                               </pre>
-                              <button 
-                                onClick={() => copyToClipboard(file.content, `code-${i}-${fIdx}`)}
-                                className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-xl text-gray-300 hover:text-white opacity-0 group-hover/code:opacity-100 transition-all border border-white/10"
-                              >
-                                {copiedId === `code-${i}-${fIdx}` ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                              </button>
                             </div>
                           )}
                         </div>
@@ -285,11 +274,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
               <div className="flex justify-start">
                 <div className="bg-[#1E2028] text-gray-400 rounded-2xl rounded-bl-none p-4 border border-white/5 flex items-center gap-4 shadow-xl">
                    <div className="flex gap-1.5">
-                      <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                      <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                      <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
                    </div>
-                   <span className="text-xs font-bold uppercase tracking-widest text-blue-400/80">Processing Request...</span>
+                   <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400/80">Generating Workspace...</span>
                 </div>
               </div>
             )}
@@ -300,72 +289,48 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
             <div className="max-w-4xl mx-auto">
                 <form onSubmit={handleSend} className="relative bg-[#16181D] border border-white/10 rounded-2xl overflow-hidden focus-within:border-blue-500/50 shadow-2xl transition-all">
                     <div className="flex items-end">
-                        <button type="button" onClick={() => fileInputRef.current?.click()} className="p-4 text-gray-400 hover:text-blue-400 transition-colors">
+                        <button type="button" onClick={() => fileInputRef.current?.click()} className="p-4 text-gray-400 hover:text-blue-400">
                             {isUploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Paperclip className="w-6 h-6" />}
                         </button>
                         <textarea
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                            placeholder="Type your feature request here..."
+                            placeholder="Describe your requested changes..."
                             className="flex-1 bg-transparent text-gray-100 py-4 text-sm focus:outline-none resize-none max-h-48 min-h-[56px] custom-scrollbar"
                             rows={1}
                         />
-                        {loading ? (
-                            <button type="button" onClick={stopGeneration} className="p-4 text-red-500 hover:text-red-400">
-                                <Square className="w-6 h-6 fill-current" />
-                            </button>
-                        ) : (
-                            <button type="submit" disabled={!input.trim()} className="p-4 text-blue-500 hover:text-blue-400 disabled:text-gray-700 transition-all">
-                                <Send className="w-6 h-6" />
-                            </button>
-                        )}
+                        <button type="submit" disabled={!input.trim() || loading} className="p-4 text-blue-500 hover:text-blue-400 disabled:text-gray-700 transition-all">
+                            <Send className="w-6 h-6" />
+                        </button>
                     </div>
 
-                    {/* Collapsible Status Bar */}
+                    {/* Status Dropup */}
                     <div className="bg-black/30">
-                        <div 
-                          onClick={() => setShowStatus(!showStatus)}
-                          className="px-4 py-1.5 border-t border-white/5 flex items-center justify-between cursor-pointer group"
-                        >
+                        <div onClick={() => setShowStatus(!showStatus)} className="px-4 py-1.5 border-t border-white/5 flex items-center justify-between cursor-pointer group">
                              <div className="flex items-center gap-3">
-                                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{userProfile?.credits || 0} Credits</span>
-                                 <div className="flex items-center gap-1">
+                                 <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">{userProfile?.credits || 0} Credits Left</span>
+                                 <div className="flex gap-1">
                                     {settings.enableAdminPanel && <ShieldCheck className="w-3 h-3 text-purple-400" />}
                                     {settings.enableSEO && <Search className="w-3 h-3 text-green-500" />}
                                     {settings.enablePWA && <Globe className="w-3 h-3 text-blue-500" />}
                                  </div>
                              </div>
-                             <div className="flex items-center gap-1.5 text-[9px] text-gray-600 font-bold uppercase group-hover:text-gray-400 transition-colors">
-                                 {showStatus ? 'Hide Details' : 'Show Features'}
-                                 <ChevronRight className={`w-3 h-3 transition-transform ${showStatus ? 'rotate-90' : ''}`} />
+                             <div className="flex items-center gap-1.5 text-[9px] text-gray-600 font-bold uppercase">
+                                 {showStatus ? 'Hide Features' : 'Show Features'}
+                                 <ChevronUp className={`w-3 h-3 transition-transform ${showStatus ? 'rotate-180' : ''}`} />
                              </div>
                         </div>
-
                         {showStatus && (
-                            <div className="px-4 py-3 border-t border-white/5 grid grid-cols-2 md:grid-cols-4 gap-3 animate-in slide-in-from-top-1">
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-[9px] text-gray-500 font-bold uppercase">Model</span>
-                                    <span className="text-[11px] text-white font-mono truncate">{settings.selectedModel}</span>
+                            <div className="px-4 py-3 border-t border-white/5 grid grid-cols-2 gap-3 animate-in slide-in-from-bottom-1">
+                                <div className="text-[10px] text-gray-400 flex flex-col">
+                                    <span className="font-bold text-white uppercase mb-1">Architecture</span>
+                                    {settings.enableAdminPanel ? '• admin.html Active' : '• Isolated App Mode'}
+                                    {settings.enableSEO ? '• SEO Files Enabled' : ''}
                                 </div>
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-[9px] text-gray-500 font-bold uppercase">Admin Panel</span>
-                                    <span className={`text-[11px] font-bold ${settings.enableAdminPanel ? 'text-purple-400' : 'text-gray-600'}`}>
-                                        {settings.enableAdminPanel ? 'ENABLED (admin.html)' : 'DISABLED'}
-                                    </span>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-[9px] text-gray-500 font-bold uppercase">SEO Files</span>
-                                    <span className={`text-[11px] font-bold ${settings.enableSEO ? 'text-green-500' : 'text-gray-600'}`}>
-                                        {settings.enableSEO ? 'ACTIVE (xml/txt)' : 'INACTIVE'}
-                                    </span>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-[9px] text-gray-500 font-bold uppercase">Frameworks</span>
-                                    <div className="flex gap-2">
-                                        {settings.enableTailwind && <span className="text-[11px] text-blue-400 font-bold">Tailwind</span>}
-                                        {settings.enableBootstrap && <span className="text-[11px] text-purple-400 font-bold">Bootstrap</span>}
-                                    </div>
+                                <div className="text-[10px] text-gray-400 flex flex-col text-right">
+                                    <span className="font-bold text-white uppercase mb-1">Active Model</span>
+                                    {settings.selectedModel}
                                 </div>
                             </div>
                         )}
