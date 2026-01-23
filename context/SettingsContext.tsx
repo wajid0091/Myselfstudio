@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Settings, SettingsContextType } from '../types';
 
@@ -9,7 +10,6 @@ const defaultSettings: Settings = {
   enablePWA: false,
   enableFirebaseRules: false,
   enableCustomCursor: false,
-  enableSecureMode: false,
   enableMobileResponsive: true,
   enableDesktopResponsive: true,
   customDomain: '',
@@ -27,7 +27,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
          const savedGlobal = localStorage.getItem('wajid_ai_global_settings');
          if (savedGlobal) {
              const parsed = JSON.parse(savedGlobal);
-             // Merge saved settings with defaults
              return { ...defaultSettings, ...parsed };
          }
      } catch (e) {
@@ -40,8 +39,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSettings(prev => {
         const updated = { ...prev, ...newSettings };
         
-        // Persist Global Settings (Cursor, API Key, Model Selection, ImgBB)
-        // We selectively save keys that should be global
         const globalToSave = {
             enableCustomCursor: updated.enableCustomCursor,
             googleApiKey: updated.googleApiKey,
