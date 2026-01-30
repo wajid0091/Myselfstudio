@@ -3,7 +3,7 @@
   "name": "MYSELF IDE - Wajid Ali",
   "short_name": "MYSELF IDE",
   "description": "AI Powered Web Builder & IDE by Wajid Ali",
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0F1117",
   "theme_color": "#4F46E5",

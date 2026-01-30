@@ -6,7 +6,7 @@ import {
     Plus, Code2, Heart, FolderOpen, ArrowLeft, Trash2, 
     ChevronRight, Globe, Sparkles, Smartphone, Search, 
     Zap, Info, Shield, Mail, TrendingUp, Clock, Download,
-    ShieldCheck, LayoutDashboard, CheckCircle2, X
+    ShieldCheck, LayoutDashboard, CheckCircle2, X, Monitor
 } from 'lucide-react';
 import { CommunityProject } from '../types';
 import PublicPreview from './PublicPreview';
@@ -56,7 +56,7 @@ const Dashboard: React.FC = () => {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState('My Project');
   const [publishingId, setPublishingId] = useState<string | null>(null);
-  const [showInstallBanner, setShowInstallBanner] = useState(true);
+  const [dismissedInstall, setDismissedInstall] = useState(false);
 
   // Search and Sort Algorithm State
   const [searchQuery, setSearchQuery] = useState('');
@@ -132,21 +132,33 @@ const Dashboard: React.FC = () => {
 
         <div className="flex-1 overflow-y-auto scrollbar-hide pb-24 px-4 space-y-6">
             
-            {/* PWA INSTALL BANNER */}
-            {isInstallable && showInstallBanner && (
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 rounded-[1.5rem] flex items-center justify-between shadow-2xl animate-in slide-in-from-top-4 duration-500 relative">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                            <Smartphone className="w-6 h-6 text-white" />
+            {/* LUXURY PWA NOTIFICATION BANNER */}
+            {isInstallable && !isStandalone && !dismissedInstall && (
+                <div className="bg-[#1A1D24] border border-indigo-500/30 p-5 rounded-[2rem] shadow-2xl animate-in slide-in-from-top-4 duration-500 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/5 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                    <div className="flex items-start gap-4 relative z-10">
+                        <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center shrink-0">
+                            <Smartphone className="w-6 h-6 text-indigo-400" />
                         </div>
-                        <div>
-                            <p className="text-xs font-black text-white uppercase tracking-tighter">Install Myself IDE</p>
-                            <p className="text-[10px] text-white/70 font-bold uppercase">Run smoothly as a Native App</p>
+                        <div className="flex-1">
+                            <h3 className="text-sm font-black text-white uppercase tracking-tight">App Experience Available</h3>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5 tracking-wider leading-relaxed">Install MYSELF IDE for full-screen coding, faster loads, and better AI performance.</p>
+                            
+                            <div className="flex items-center gap-3 mt-4">
+                                <button 
+                                    onClick={installApp}
+                                    className="px-5 py-2 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg shadow-indigo-900/40 active:scale-95 transition-all flex items-center gap-2"
+                                >
+                                    <Zap className="w-3 h-3 fill-current" /> Install App
+                                </button>
+                                <button 
+                                    onClick={() => setDismissedInstall(true)}
+                                    className="px-4 py-2 bg-white/5 text-gray-400 text-[10px] font-black uppercase rounded-xl hover:text-white transition-colors flex items-center gap-2"
+                                >
+                                    <Monitor className="w-3 h-3" /> Continue on Web
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button onClick={installApp} className="px-3 py-1.5 bg-white text-indigo-600 text-[10px] font-black uppercase rounded-lg shadow-lg active:scale-95 transition-transform">Install</button>
-                        <button onClick={() => setShowInstallBanner(false)} className="p-1 text-white/50 hover:text-white"><X className="w-4 h-4" /></button>
                     </div>
                 </div>
             )}
