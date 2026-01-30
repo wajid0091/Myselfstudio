@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Code2, Loader2, User, Building2, Globe, Phone, Mail, Lock, ArrowRight, Gift } from 'lucide-react';
+import { Code2, Loader2, User, Mail, Lock, ArrowRight, Gift, Phone } from 'lucide-react';
 
 interface Props {
     onSuccess?: () => void;
@@ -19,8 +20,6 @@ const AuthScreen: React.FC<Props> = ({ onSuccess }) => {
   
   // Register Extra Fields
   const [username, setUsername] = useState('');
-  const [company, setCompany] = useState('');
-  const [country, setCountry] = useState('');
   const [phone, setPhone] = useState('');
   const [referralCode, setReferralCode] = useState('');
 
@@ -38,10 +37,8 @@ const AuthScreen: React.FC<Props> = ({ onSuccess }) => {
           email,
           password,
           username,
-          company,
-          country,
           phone,
-          referredBy: referralCode // Pass referral code
+          referredBy: referralCode 
         });
       }
       if (onSuccess) onSuccess();
@@ -65,7 +62,7 @@ const AuthScreen: React.FC<Props> = ({ onSuccess }) => {
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h2>
           <p className="text-center text-gray-400 text-sm mb-8">
-            {isLogin ? 'Enter your credentials to access your workspace.' : 'Join the community of developers building the future.'}
+            {isLogin ? 'Enter your credentials to access WAI IDE.' : 'Join the Wajid Ali IDE community today.'}
           </p>
 
           {error && (
@@ -87,29 +84,6 @@ const AuthScreen: React.FC<Props> = ({ onSuccess }) => {
                     onChange={e => setUsername(e.target.value)}
                     className="w-full bg-[#0F1117] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-blue-500 focus:outline-none transition-colors"
                   />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="relative">
-                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                        <input
-                            type="text"
-                            placeholder="Company"
-                            value={company}
-                            onChange={e => setCompany(e.target.value)}
-                            className="w-full bg-[#0F1117] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-blue-500 focus:outline-none transition-colors"
-                        />
-                    </div>
-                    <div className="relative">
-                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                        <input
-                            type="text"
-                            placeholder="Country"
-                            required
-                            value={country}
-                            onChange={e => setCountry(e.target.value)}
-                            className="w-full bg-[#0F1117] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-blue-500 focus:outline-none transition-colors"
-                        />
-                    </div>
                 </div>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />

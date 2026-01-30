@@ -28,16 +28,14 @@ export interface UserProfile {
   planExpiry?: number;
   credits: number;
   sourceCodeCredits: number;
+  projectsPublished: number;
   lastLoginDate: string; 
   avatar?: string;
   projectsCreated: number;
-  projectsPublished: number;
-  referralCode?: string;
-  referredBy?: string;
   isAdmin?: boolean;
-  isCreator?: boolean;
   isBanned?: boolean;
   features?: string[];
+  referredBy?: string | null;
 }
 
 export interface GeneratedFile {
@@ -67,7 +65,13 @@ export interface Settings {
   firebaseConfig: string; 
   selectedModel: string;
   imgBBApiKey?: string;
-  googleApiKey?: string;
+}
+
+export interface Suggestion {
+    id: string;
+    label: string;
+    prompt: string;
+    order: number;
 }
 
 export interface FileContextType {
@@ -86,7 +90,7 @@ export interface FileContextType {
   renameProject: (projectId: string, newName: string) => Promise<void>;
   renamePublicProject: (publicProjectId: string, newName: string) => Promise<void>;
   publishProject: (projectId: string, publicName: string, description: string, tags: string[]) => Promise<boolean>; 
-  unpublishProject: (originalProjectId: string) => Promise<void>; 
+  unpublishProject: (projectId: string) => Promise<void>; 
   cloneCommunityProject: (project: CommunityProject) => Promise<'SUCCESS' | 'REQUIRE_LOGIN' | 'NO_CREDITS'>; 
   toggleLike: (projectId: string) => void; 
   deductCredit: () => Promise<boolean>; 
@@ -129,6 +133,24 @@ export interface CommunityProject {
   tags: string[];
 }
 
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  title: string;
+  details: string;
+  isEnabled: boolean;
+  region: 'PK' | 'INTL';
+}
+
+export interface PlanConfig {
+  name: string;
+  price: number;
+  duration: number;
+  dailyCredits: number;
+  copyCredits: number;
+  features: string[];
+}
+
 export interface Transaction {
   id: string;
   userId: string;
@@ -137,8 +159,8 @@ export interface Transaction {
   amount: string;
   method: string;
   transactionId: string;
-  screenshot?: string;
-  status: 'pending' | 'approved' | 'rejected';
+  screenshot: string;
+  status: string;
   timestamp: number;
 }
 
@@ -147,30 +169,10 @@ export interface CreatorApplication {
   userId: string;
   name: string;
   email: string;
-  country: string;
-  phone: string;
-  experience: 'Junior' | 'Senior' | 'Expert';
-  platform: 'TikTok' | 'YouTube' | 'Facebook' | 'Instagram' | 'LinkedIn';
+  platform: string;
   followers: string;
+  experience: string;
+  country: string;
   profileLink: string;
   status: 'pending' | 'approved' | 'rejected';
-  timestamp: number;
-}
-
-export interface PaymentMethod {
-    id: string;
-    name: string;
-    title: string;
-    details: string;
-    region: 'PK' | 'INTL';
-    isEnabled: boolean;
-}
-
-export interface PlanConfig {
-    name: string;
-    price: number;
-    duration: number;
-    dailyCredits: number;
-    copyCredits: number;
-    features: string[];
 }

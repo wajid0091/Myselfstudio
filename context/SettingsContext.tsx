@@ -15,8 +15,7 @@ const defaultSettings: Settings = {
   customDomain: '',
   firebaseConfig: '',
   selectedModel: 'gemini-3-flash-preview', 
-  imgBBApiKey: '',
-  googleApiKey: '' 
+  imgBBApiKey: ''
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -27,7 +26,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
          const savedGlobal = localStorage.getItem('wajid_ai_global_settings');
          if (savedGlobal) {
              const parsed = JSON.parse(savedGlobal);
-             return { ...defaultSettings, ...parsed };
+             // Ensure any old stored API key is removed from state to comply with guidelines
+             const { googleApiKey, ...sanitized } = parsed;
+             return { ...defaultSettings, ...sanitized };
          }
      } catch (e) {
          console.error("Failed to load global settings", e);
@@ -41,7 +42,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         
         const globalToSave = {
             enableCustomCursor: updated.enableCustomCursor,
-            googleApiKey: updated.googleApiKey,
             selectedModel: updated.selectedModel,
             imgBBApiKey: updated.imgBBApiKey
         };

@@ -7,95 +7,50 @@
     
     <!-- PRIMARY SEO -->
     <title>MYSELF IDE - AI Powered Web Builder & Code Assistant</title>
-    <meta name="description" content="Build websites instantly with MYSELF IDE. The best AI-powered HTML, CSS, and React editor with live preview. Generate code, edit projects, and publish online." />
-    <meta name="keywords" content="MYSELF IDE, Myself IDE PK, AI Web Builder, HTML Editor, Code Assistant, AI Code Generator, Website Builder, React IDE, Tailwind Editor, Online Compiler, Web Development Pakistan" />
-    <meta name="author" content="MYSELF IDE" />
+    <meta name="description" content="Build websites instantly with MYSELF IDE. Created by Wajid Ali, the best AI-powered code assistant that outperforms ChatGPT and Gemini in web logic." />
+    <meta name="keywords" content="MYSELF IDE, Wajid Ali IDE, AI Web Builder, Code Assistant, AI Code Generator, Website Builder Pakistan, React IDE, PWA Web Builder" />
+    <meta name="author" content="Wajid Ali" />
     <link rel="canonical" href="https://myselfide.online/" />
+    <meta name="robots" content="index, follow" />
 
     <!-- OPEN GRAPH / FACEBOOK -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://myselfide.online/" />
-    <meta property="og:title" content="MYSELF IDE - AI Powered Web Builder" />
-    <meta property="og:description" content="Create stunning websites with AI. Smart code generation, live preview, and full project management." />
+    <meta property="og:title" content="MYSELF IDE - Professional AI Web Builder" />
+    <meta property="og:description" content="Create stunning websites with WAI Engine. Smarter than general AI." />
     <meta property="og:image" content="/myselfideicon.png" />
-
-    <!-- TWITTER -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://myselfide.online/" />
-    <meta property="twitter:title" content="MYSELF IDE - AI Powered Web Builder" />
-    <meta property="twitter:description" content="Create stunning websites with AI. Smart code generation, live preview, and full project management." />
-    <meta property="twitter:image" content="/myselfideicon.png" />
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#1e1e1e" />
+    <meta name="theme-color" content="#0F1117" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="/myselfideicon.png" />
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              ide: {
-                bg: '#1e1e1e',
-                panel: '#252526',
-                accent: '#007acc',
-                border: '#333333',
-                fg: '#cccccc'
-              }
-            }
-          }
-        }
-      }
-    </script>
     <style>
       :root {
         --sat: env(safe-area-inset-top);
-        --sar: env(safe-area-inset-right);
         --sab: env(safe-area-inset-bottom);
-        --sal: env(safe-area-inset-left);
       }
       html, body { 
         margin: 0; 
         padding: 0; 
-        background-color: #1e1e1e; 
+        background-color: #0F1117; 
         color: #cccccc; 
         overflow: hidden; 
         height: 100vh;
         height: 100dvh;
         width: 100vw;
-        position: fixed; /* Prevents bounce scroll on iOS */
+        position: fixed;
       }
       #root {
         height: 100%;
         width: 100%;
-        display: flex;
-        flex-direction: column;
       }
-      
-      /* Hide Scrollbar but allow scrolling */
-      .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-      }
-      .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-      }
-
-      /* Custom scrollbar for Editor/Sidebar */
-      .custom-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
-      .custom-scrollbar::-webkit-scrollbar-track { background: #1e1e1e; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: #444; border-radius: 5px; }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
-
-      /* Safe area padding for mobile navigation */
-      .pb-safe {
-        padding-bottom: var(--sab);
-      }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 <script type="importmap">
 {
@@ -106,12 +61,12 @@
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
     "react-markdown": "https://esm.sh/react-markdown@^10.1.0",
     "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "vite": "https://esm.sh/vite@^7.3.1",
     "@monaco-editor/react": "https://esm.sh/@monaco-editor/react@^4.7.0",
     "jszip": "https://esm.sh/jszip@^3.10.1",
-    "@tailwindcss/typography": "https://esm.sh/@tailwindcss/typography@^0.5.19",
-    "firebase/": "https://esm.sh/firebase@^12.8.0/"
+    "firebase/": "https://esm.sh/firebase@^12.8.0/",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "@tailwindcss/typography": "https://esm.sh/@tailwindcss/typography@^0.5.19"
   }
 }
 </script>
@@ -122,8 +77,8 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('SW registered', reg))
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then(reg => console.log('SW registered', reg.scope))
             .catch(err => console.log('SW registration failed', err));
         });
       }

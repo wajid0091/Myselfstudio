@@ -1,7 +1,15 @@
+
 import React, { useEffect, useState, useRef } from 'react';
-import Editor, { OnMount } from "@monaco-editor/react";
+import Editor, { OnMount, loader } from "@monaco-editor/react";
 import { useFile } from '../context/FileContext';
 import { Copy, Clipboard, Trash2, CheckSquare, PanelLeft, Code2 } from 'lucide-react';
+
+// Configure Monaco loader to use a stable version from CDN to prevent "object Event" initialization errors
+loader.config({ 
+  paths: { 
+    vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs" 
+  } 
+});
 
 interface EditorWindowProps {
   onToggleSidebar?: () => void;
@@ -202,13 +210,12 @@ const EditorWindow: React.FC<EditorWindowProps> = ({ onToggleSidebar, isSidebarO
                     lineNumbers: 'on',
                     scrollBeyondLastLine: false,
                     automaticLayout: true,
-                    wordWrap: 'on', // FIXED: Prevents horizontal scrolling issues
+                    wordWrap: 'on', 
                     padding: { top: 16, bottom: 16 },
                     fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
                     cursorBlinking: 'smooth',
                     smoothScrolling: true,
                     contextmenu: true,
-                    // Optimization for large files
                     renderValidationDecorations: 'on',
                 }}
             />
