@@ -12,6 +12,9 @@
     <meta name="author" content="Wajid Ali" />
     <link rel="canonical" href="https://myselfide.online/" />
     <meta name="robots" content="index, follow" />
+    
+    <!-- GOOGLE SEARCH CONSOLE VERIFICATION (Placeholder) -->
+    <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE_HERE" />
 
     <!-- OPEN GRAPH / FACEBOOK -->
     <meta property="og:type" content="website" />
@@ -75,11 +78,13 @@
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
     <script>
+      // Fixed Service Worker Registration to prevent Origin errors
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js', { scope: '/' })
-            .then(reg => console.log('SW registered', reg.scope))
-            .catch(err => console.log('SW registration failed', err));
+          // Use relative path and handle promise to avoid origin mismatch on dynamic URLs
+          navigator.serviceWorker.register('./sw.js', { scope: './' })
+            .then(reg => console.log('MYSELF IDE SW Registered:', reg.scope))
+            .catch(err => console.log('MYSELF IDE SW Error:', err));
         });
       }
     </script>

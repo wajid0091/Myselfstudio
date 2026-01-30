@@ -6,8 +6,7 @@ import {
     Plus, Code2, Heart, FolderOpen, ArrowLeft, Trash2, 
     ChevronRight, Globe, Sparkles, Smartphone, Search, 
     Zap, Info, Shield, Mail, TrendingUp, Clock, Download,
-    // Add missing icons
-    ShieldCheck, LayoutDashboard
+    ShieldCheck, LayoutDashboard, CheckCircle2, X
 } from 'lucide-react';
 import { CommunityProject } from '../types';
 import PublicPreview from './PublicPreview';
@@ -48,7 +47,7 @@ const LiveThumbnail: React.FC<{ project: CommunityProject }> = ({ project }) => 
 const Dashboard: React.FC = () => {
   const { projects, createProject, communityProjects, cloneCommunityProject, openProject, deleteProject, toggleLike, unpublishProject } = useFile();
   const { user, userProfile, logout } = useAuth();
-  const { isInstallable, installApp } = usePWA();
+  const { isInstallable, installApp, isStandalone } = usePWA();
   
   const [currentView, setCurrentView] = useState<'home' | 'community' | 'profile_menu' | 'profile_projects' | 'about' | 'privacy'>('home');
   const [isCreating, setIsCreating] = useState(false);
@@ -57,6 +56,7 @@ const Dashboard: React.FC = () => {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState('My Project');
   const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(true);
 
   // Search and Sort Algorithm State
   const [searchQuery, setSearchQuery] = useState('');
@@ -131,6 +131,26 @@ const Dashboard: React.FC = () => {
         </header>
 
         <div className="flex-1 overflow-y-auto scrollbar-hide pb-24 px-4 space-y-6">
+            
+            {/* PWA INSTALL BANNER */}
+            {isInstallable && showInstallBanner && (
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 rounded-[1.5rem] flex items-center justify-between shadow-2xl animate-in slide-in-from-top-4 duration-500 relative">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            <Smartphone className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-black text-white uppercase tracking-tighter">Install Myself IDE</p>
+                            <p className="text-[10px] text-white/70 font-bold uppercase">Run smoothly as a Native App</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button onClick={installApp} className="px-3 py-1.5 bg-white text-indigo-600 text-[10px] font-black uppercase rounded-lg shadow-lg active:scale-95 transition-transform">Install</button>
+                        <button onClick={() => setShowInstallBanner(false)} className="p-1 text-white/50 hover:text-white"><X className="w-4 h-4" /></button>
+                    </div>
+                </div>
+            )}
+
             {currentView === 'home' && (
                 <>
                     <div className="grid grid-cols-1 gap-4">
