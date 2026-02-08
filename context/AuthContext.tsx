@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth, db } from '../services/firebase';
 import { 
@@ -22,10 +23,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const today = getTodayString();
       const now = Date.now();
       
-      // Check if user is banned
       if (profile.isBanned) {
           await logout();
-          alert("Your account has been suspended by the administrator.");
           return;
       }
 
@@ -34,16 +33,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let currentFeatures = profile.features || [];
       let updates: any = {};
 
-      // Check Plan Expiration (Only for paid plans)
       if (activePlan !== 'free' && planExpiry > 0 && now > planExpiry) {
           activePlan = 'free';
           updates.plan = 'free';
           updates.planExpiry = 0;
-          updates.credits = 10; // Reset to free daily limit immediately upon expiration
+          updates.credits = 10;
           updates.sourceCodeCredits = 0;
           
-          // Revert features to basic/free defaults if expired
-          // We fetch 'free' plan config to get default features
           try {
              const freePlanSnap = await get(ref(db, `system_settings/plans/free`));
              if(freePlanSnap.exists()) {
@@ -52,11 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                  currentFeatures = [];
              }
           } catch(e) { currentFeatures = []; }
-
-          alert("Your plan has expired. You have been downgraded to the Free Plan.");
       } else {
-          // If plan is active, ensure we have the latest features from the plan config
-          // (In case Admin added a new feature to the existing plan)
           try {
               const planSnapshot = await get(ref(db, `system_settings/plans/${activePlan}`));
               if (planSnapshot.exists()) {
@@ -68,21 +60,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
       }
 
-      // DAILY CREDIT LOGIC
       let newCredits = profile.credits;
-      
       if (profile.lastLoginDate !== today) {
-          // LOGIC:
-          // 1. If user has < 10 credits, refill to 10 (Daily Minimum Floor).
-          // 2. If user has >= 10 credits (e.g., has 120 from a paid plan, or didn't use yesterday's 10),
-          //    DO NOT add more. DO NOT reset to 10. Keep them as is.
-          // 3. This prevents accumulation for Free users (10 -> 10, not 20).
-          // 4. This prevents daily 120 refills for Paid users (115 -> 115, 5 -> 10).
-          
           if (newCredits < 10) {
               newCredits = 10;
           }
-          // else: newCredits remains same.
       }
 
       updates.lastLoginDate = today;
@@ -98,7 +80,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       
-      // Cleanup previous listener if any
       if (profileUnsubscribe) {
           off(ref(db, `users/${currentUser?.uid || 'unknown'}/profile`));
           profileUnsubscribe = null;
@@ -107,12 +88,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (currentUser) {
         const profileRef = ref(db, `users/${currentUser.uid}/profile`);
         
-        // REAL-TIME LISTENER for Profile (Credits, Plan, etc.)
         profileUnsubscribe = onValue(profileRef, async (snapshot) => {
             if (snapshot.exists()) {
                 const profile = snapshot.val();
-                
-                // Security Check
                 if (profile.isBanned) {
                     await signOut(auth);
                     setUser(null);
@@ -120,13 +98,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     setLoading(false);
                     return;
                 }
-
                 setUserProfile(profile);
             } else {
-                // Create profile if missing
                 const newProfile: UserProfile = {
                     id: currentUser.uid,
-                    name: currentUser.displayName || 'User',
+                    name: currentUser.displayName || 'Developer',
                     email: currentUser.email || '',
                     plan: 'free',
                     credits: 10, 
@@ -141,7 +117,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setLoading(false);
         });
 
-        // Run the daily check once on mount/login
         const snap = await get(profileRef);
         if(snap.exists()) {
             await checkDailyCredits(currentUser.uid, snap.val());
@@ -166,10 +141,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (data: any) => {
-    const { email, password, username, company, country, phone, referredBy } = data;
+    const { email, password, username, phone, referredBy } = data;
     const res = await createUserWithEmailAndPassword(auth, email, password);
     
-    // Check referral
     let bonusCredits = 0;
     if (referredBy) {
          bonusCredits = 10; 
@@ -177,11 +151,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const newProfile: UserProfile = {
       id: res.user.uid,
-      name: username,
+      name: username || 'Developer',
       email: email,
-      company: company,
-      country: country,
-      phone: phone,
+      phone: phone || '',
       plan: 'free',
       credits: 10 + bonusCredits,
       sourceCodeCredits: 0,
