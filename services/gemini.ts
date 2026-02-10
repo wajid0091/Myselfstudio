@@ -2,11 +2,24 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { File, Settings, Message } from "../types";
 
-// Helper to get multiple keys from the environment variable
+// Helper to aggregate all available API keys from the environment
 const getApiKeys = () => {
-  const keysString = process.env.API_KEY || "";
-  // Splits keys by comma, trims whitespace, and ignores empty strings
-  return keysString.split(',').map(k => k.trim()).filter(k => k);
+  const keys: string[] = [];
+
+  // 1. Check the main comma-separated list
+  const mainKeys = process.env.API_KEY || "";
+  if (mainKeys) {
+    keys.push(...mainKeys.split(',').map(k => k.trim()).filter(k => k));
+  }
+
+  // 2. Check individual numbered keys (as requested for Netlify reliability)
+  if (process.env.API_KEY_1) keys.push(process.env.API_KEY_1.trim());
+  if (process.env.API_KEY_2) keys.push(process.env.API_KEY_2.trim());
+  if (process.env.API_KEY_3) keys.push(process.env.API_KEY_3.trim());
+  if (process.env.API_KEY_4) keys.push(process.env.API_KEY_4.trim());
+
+  // Remove duplicates and empty strings
+  return [...new Set(keys)].filter(k => k && k.length > 10);
 };
 
 export const generateCode = async (
@@ -21,7 +34,7 @@ export const generateCode = async (
   
   const keys = getApiKeys();
   if (keys.length === 0) {
-    throw new Error("API_KEY is missing. Please add your Gemini API Key(s) to environment variables (comma separated).");
+    throw new Error("No valid API Keys found. Please add API_KEY, API_KEY_1, API_KEY_2 etc. to your environment variables.");
   }
 
   const modelName = 'gemini-3-flash-preview'; 
@@ -59,11 +72,12 @@ RESPONSE FORMAT (JSON ONLY):
   let lastError: any = null;
 
   // KEY ROTATION LOGIC
-  // We loop through available keys. If one fails with a quota error, we try the next.
+  // We loop through available keys. If one fails, we try the next.
   for (let i = 0; i < keys.length; i++) {
     const apiKey = keys[i];
     
     try {
+      console.log(`[WAI Engine] Trying Key #${i + 1}...`);
       const ai = new GoogleGenAI({ apiKey });
       
       const response = await ai.models.generateContent({
@@ -107,24 +121,21 @@ RESPONSE FORMAT (JSON ONLY):
       };
 
     } catch (err: any) {
-      console.warn(`Key ${i + 1}/${keys.length} failed:`, err.message);
+      console.warn(`Key #${i + 1} failed:`, err.message);
       lastError = err;
       
-      // If error is NOT related to quota (429) or permissions (403), throw immediately (don't rotate for bad requests)
-      // However, usually we want to rotate on 429 (Too Many Requests) or 503 (Service Unavailable)
-      const isQuotaError = err.message?.includes('429') || err.message?.includes('403') || err.message?.includes('503') || err.message?.includes('quota');
-      
-      if (!isQuotaError && i < keys.length - 1) {
-          // If it's some other random network error, we might still want to try the next key just in case
-          continue; 
+      // Stop rotation if it's a content safety blocking issue (usually not key related)
+      if (err.message?.includes("Safety")) {
+          throw new Error("Request blocked by AI Safety filters. Please modify your prompt.");
       }
-      
+
+      // If this was the last key, throw the error
       if (i === keys.length - 1) {
-          // All keys failed
-          console.error("All API keys exhausted or failed.");
+          console.error("All API keys exhausted.");
           throw new Error(`WAI Engine Failed: ${lastError?.message || "All API keys exhausted."}`);
       }
-      // Otherwise, continue loop to next key
+      
+      // Otherwise, loop continues to next key
     }
   }
 

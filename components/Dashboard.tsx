@@ -66,10 +66,10 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    // CHANGED: h-screen overflow-y-auto to enable internal scrolling within the fixed body
-    <div className="h-screen bg-[#0F1117] text-gray-200 font-sans flex flex-col overflow-y-auto custom-scrollbar relative">
-      {/* 1. Header (Original Style) - Sticky within the scroll container */}
-      <header className="px-6 py-4 flex items-center justify-between bg-[#16181D] border-b border-white/5 sticky top-0 z-40 shrink-0 shadow-sm">
+    // Main Container with fixed scrolling behavior
+    <div className="h-screen bg-[#0F1117] text-gray-200 font-sans flex flex-col overflow-y-auto custom-scrollbar relative selection:bg-indigo-500/30">
+      {/* 1. Header (Original Style) */}
+      <header className="px-6 py-4 flex items-center justify-between bg-[#16181D] border-b border-white/5 sticky top-0 z-40 shrink-0 shadow-sm backdrop-blur-md bg-opacity-90">
           <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
                   <Code2 className="w-6 h-6 text-white" />
@@ -142,12 +142,12 @@ const Dashboard: React.FC = () => {
       <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8 space-y-8 pb-20">
           
           {/* Create Project Button (Top) */}
-          <div onClick={() => setIsCreating(true)} className="group relative bg-gradient-to-r from-indigo-600 to-blue-600 rounded-3xl p-8 cursor-pointer shadow-2xl overflow-hidden hover:scale-[1.01] transition-all">
-              <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-10 translate-y-10">
+          <div onClick={() => setIsCreating(true)} className="group relative bg-gradient-to-r from-indigo-600 to-blue-600 rounded-3xl p-8 cursor-pointer shadow-2xl overflow-hidden hover:scale-[1.01] transition-all border border-white/5">
+              <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-10 translate-y-10 transition-transform group-hover:translate-x-5 group-hover:translate-y-5">
                   <Code2 className="w-64 h-64 text-white" />
               </div>
               <div className="relative z-10 flex flex-col items-start gap-4">
-                  <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
+                  <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm shadow-inner">
                       <Plus className="w-8 h-8 text-white" />
                   </div>
                   <div>
@@ -158,7 +158,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Tab Selection */}
-          <div className="flex gap-6 border-b border-white/5 pb-1 sticky top-[72px] bg-[#0F1117] z-30 pt-2">
+          <div className="flex gap-6 border-b border-white/5 pb-1 sticky top-[72px] bg-[#0F1117]/95 backdrop-blur-sm z-30 pt-2">
               <button 
                 onClick={() => setActiveTab('workspace')} 
                 className={`pb-3 text-sm font-black uppercase tracking-widest transition-all ${activeTab === 'workspace' ? 'text-indigo-500 border-b-2 border-indigo-500' : 'text-gray-500 hover:text-white'}`}
@@ -183,7 +183,7 @@ const Dashboard: React.FC = () => {
                       </div>
                   ) : (
                       projects.map(p => (
-                          <div key={p.id} className="bg-[#1A1D24] p-6 rounded-3xl border border-white/5 hover:border-white/10 transition-all flex flex-col justify-between group h-48">
+                          <div key={p.id} className="bg-[#1A1D24] p-6 rounded-3xl border border-white/5 hover:border-indigo-500/30 transition-all flex flex-col justify-between group h-48 shadow-lg hover:shadow-indigo-500/10">
                               <div>
                                   <div className="flex justify-between items-start mb-4">
                                       <div className="truncate pr-4">
@@ -215,7 +215,7 @@ const Dashboard: React.FC = () => {
           {activeTab === 'community' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in slide-in-from-bottom duration-500">
                   {communityProjects.map(p => (
-                      <div key={p.id} onClick={() => setViewingProject(p)} className="bg-[#1A1D24] rounded-3xl border border-white/5 overflow-hidden cursor-pointer hover:border-indigo-500/30 transition-all group">
+                      <div key={p.id} onClick={() => setViewingProject(p)} className="bg-[#1A1D24] rounded-3xl border border-white/5 overflow-hidden cursor-pointer hover:border-indigo-500/30 transition-all group shadow-lg">
                           <div className="h-40 relative bg-black/50">
                               <LiveThumbnail project={p} />
                           </div>
@@ -237,7 +237,7 @@ const Dashboard: React.FC = () => {
       {/* Modals */}
       {isCreating && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-6">
-              <div className="bg-[#1A1D24] w-full max-w-sm p-8 rounded-3xl border border-white/10 shadow-2xl">
+              <div className="bg-[#1A1D24] w-full max-w-sm p-8 rounded-3xl border border-white/10 shadow-2xl animate-in zoom-in-95">
                   <h3 className="text-2xl font-black text-white mb-6 text-center uppercase tracking-tighter italic">Create Project</h3>
                   <input autoFocus type="text" placeholder="Project Name..." value={newProjectName} onChange={e => setNewProjectName(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white mb-6 focus:border-indigo-500 outline-none text-center font-bold" />
                   <div className="flex gap-3">
