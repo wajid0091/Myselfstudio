@@ -20,8 +20,10 @@ interface ChatInterfaceProps {
 }
 
 const MODELS = [
-  { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro (WAI)' },
-  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash (WAI)' },
+  { id: 'google/gemini-2.0-flash-001', name: 'Gemini 2.0 Flash (WAI)' },
+  { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet' },
+  { id: 'meta-llama/llama-3.1-405b', name: 'Llama 3.1 405B' },
+  { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini' },
 ];
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
@@ -32,7 +34,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
   const [loading, setLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [expandedFiles, setExpandedFiles] = useState<Record<string, boolean>>({});
-  const [appliedFiles, setAppliedFiles] = useState<Record<string, boolean>>({}); // Success feedback state
+  const [appliedFiles, setAppliedFiles] = useState<Record<string, boolean>>({}); 
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<{name: string, type: string, url?: string}[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -123,7 +125,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
       <div className="h-12 bg-[#1E2028] border-b border-white/5 flex items-center justify-between px-4 cursor-pointer shrink-0" onClick={isFullScreen ? undefined : onToggle}>
         <div className="flex items-center gap-3">
           <Sparkles className={`w-4 h-4 text-indigo-400 ${loading ? 'animate-pulse' : ''}`} />
-          <span className="text-xs font-black text-gray-200 uppercase italic tracking-tighter">WAI Assistant v3.0</span>
+          <span className="text-xs font-black text-gray-200 uppercase italic tracking-tighter">WAI Assistant (OR)</span>
         </div>
         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
             {(isOpen || isFullScreen) && (
@@ -214,7 +216,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
                     <button type="submit" disabled={!input.trim() && attachedFiles.length === 0 || loading} className="p-4 text-indigo-500 disabled:text-gray-700 hover:scale-110 active:scale-95 transition-all"><Send className="w-6 h-6" /></button>
                 </div>
                 <div className="bg-black/40 px-4 py-2 border-t border-white/5 flex items-center justify-between text-[8px] font-black uppercase tracking-widest text-indigo-500/60">
-                    <span className="flex items-center gap-2"><Sparkles className="w-2.5 h-2.5" /> WAJID ALI IDE - WAI ENGINE</span>
+                    <span className="flex items-center gap-2"><Sparkles className="w-2.5 h-2.5" /> WAJID ALI IDE - OR ENGINE</span>
                     <span className="text-gray-600 font-mono">{settings.selectedModel}</span>
                 </div>
              </form>

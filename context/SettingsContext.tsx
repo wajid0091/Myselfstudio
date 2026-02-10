@@ -14,7 +14,7 @@ const defaultSettings: Settings = {
   enableDesktopResponsive: true,
   customDomain: '',
   firebaseConfig: '',
-  selectedModel: 'gemini-3-flash-preview', 
+  selectedModel: 'google/gemini-2.0-flash-001', 
   imgBBApiKey: ''
 };
 
@@ -26,9 +26,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
          const savedGlobal = localStorage.getItem('wajid_ai_global_settings');
          if (savedGlobal) {
              const parsed = JSON.parse(savedGlobal);
-             // Ensure any old stored API key is removed from state to comply with guidelines
-             const { googleApiKey, ...sanitized } = parsed;
-             return { ...defaultSettings, ...sanitized };
+             return { ...defaultSettings, ...parsed };
          }
      } catch (e) {
          console.error("Failed to load global settings", e);

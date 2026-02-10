@@ -1,5 +1,4 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
 import { File, Settings, Message } from "../types";
 
 export const generateCode = async (
@@ -12,8 +11,9 @@ export const generateCode = async (
   signal?: AbortSignal
 ): Promise<{ text: string; files: Record<string, string> }> => {
   
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
+  const apiKey = process.env.API_KEY;
+  const model = settings.selectedModel || 'google/gemini-2.0-flash-001';
+
   const fileContext = currentFiles.map(f => {
       const isMedia = f.language === 'image' || f.language === 'video';
       return `--- FILE: ${f.name} ---\n${isMedia ? '[MEDIA/IMAGE DATA]' : f.content}`;
@@ -45,52 +45,45 @@ ${featureContext}
 }
 `;
 
-  const contents = [
-    ...history.slice(-8).map(msg => ({
-      role: msg.role === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.content }]
+  const messages = [
+    { role: 'system', content: SYSTEM_INSTRUCTION },
+    ...history.slice(-10).map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'assistant',
+      content: msg.content
     })),
     {
       role: 'user',
-      parts: [
-        { text: `[CURRENT FILES]\n${fileContext}` },
-        { text: `[USER REQUEST]\n${prompt}` }
-      ]
+      content: `[CURRENT FILES]\n${fileContext}\n\n[USER REQUEST]\n${prompt}`
     }
   ];
 
   try {
-    const response = await ai.models.generateContent({
-      model: settings.selectedModel || 'gemini-3-flash-preview',
-      contents: contents,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.2,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            message: { type: Type.STRING },
-            files: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  name: { type: Type.STRING },
-                  content: { type: Type.STRING }
-                },
-                required: ["name", "content"]
-              }
-            },
-          },
-          required: ["message", "files"],
-        }
-      }
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "HTTP-Referer": "https://myselfide.online", // Optional
+        "X-Title": "MYSELF IDE", // Optional
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: messages,
+        response_format: { type: "json_object" },
+        temperature: 0.3
+      }),
+      signal
     });
 
-    if (!response.text) throw new Error("Empty response from WAI Engine.");
+    const data = await response.json();
+    
+    if (!data.choices || data.choices.length === 0) {
+      throw new Error(data.error?.message || "Failed to get response from OpenRouter.");
+    }
 
-    const result = JSON.parse(response.text);
+    const content = data.choices[0].message.content;
+    const result = JSON.parse(content);
+    
     const modifications: Record<string, string> = {};
     if (result.files) {
         result.files.forEach((f: any) => { 
@@ -103,7 +96,7 @@ ${featureContext}
       files: modifications
     };
   } catch (err: any) {
-    console.error("WAI Engine Error:", err);
+    console.error("WAI Engine (OpenRouter) Error:", err);
     throw new Error(`WAI Error: ${err.message}`);
   }
 };
