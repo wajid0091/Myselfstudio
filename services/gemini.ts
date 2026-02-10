@@ -1,5 +1,13 @@
 
+import { GoogleGenAI, Type } from "@google/genai";
 import { File, Settings, Message } from "../types";
+
+// Helper to get multiple keys from the environment variable
+const getApiKeys = () => {
+  const keysString = process.env.API_KEY || "";
+  // Splits keys by comma, trims whitespace, and ignores empty strings
+  return keysString.split(',').map(k => k.trim()).filter(k => k);
+};
 
 export const generateCode = async (
   prompt: string,
@@ -11,12 +19,12 @@ export const generateCode = async (
   signal?: AbortSignal
 ): Promise<{ text: string; files: Record<string, string> }> => {
   
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("API_KEY is missing. Please add it to your environment variables.");
+  const keys = getApiKeys();
+  if (keys.length === 0) {
+    throw new Error("API_KEY is missing. Please add your Gemini API Key(s) to environment variables (comma separated).");
   }
 
-  const model = settings.selectedModel || 'google/gemini-2.0-flash-001';
+  const modelName = 'gemini-3-flash-preview'; 
 
   const fileContext = currentFiles.map(f => {
       const isMedia = f.language === 'image' || f.language === 'video';
@@ -24,73 +32,101 @@ export const generateCode = async (
   }).join('\n\n');
 
   const featureContext = `
-[SETTINGS]
-- Tailwind: ${settings.enableTailwind ? 'ON' : 'OFF'}
-- Bootstrap: ${settings.enableBootstrap ? 'ON' : 'OFF'}
-- SEO: ${settings.enableSEO ? 'ON' : 'OFF'}
+[PROJECT FEATURES]
+- Tailwind CSS: ${settings.enableTailwind ? 'ENABLED' : 'DISABLED'}
+- Bootstrap 5: ${settings.enableBootstrap ? 'ENABLED' : 'DISABLED'}
+- SEO Optimization: ${settings.enableSEO ? 'ACTIVE' : 'INACTIVE'}
 `;
 
   const SYSTEM_INSTRUCTION = `
-You are "WAI Assistant", a world-class AI developer by Wajid Ali.
-Return ONLY a valid JSON object with:
-"message": (string) summary of changes
-"files": (array) objects with "name" and "content" (full source code).
+You are "WAI Assistant" (Wajid AI Architect), the most advanced AI developer.
+Your goal is to provide full, functional code updates based on user requests.
 
-NEVER break the existing code structure. Only modify what is needed.
+CRITICAL RULES:
+1. ALWAYS return a valid JSON object.
+2. Provide the FULL content of any file you modify.
+3. Maintain the professional coding standards of Wajid Ali's IDE.
+
+RESPONSE FORMAT (JSON ONLY):
+{
+  "message": "Summary of changes",
+  "files": [
+    { "name": "filename.ext", "content": "full source code" }
+  ]
+}
 `;
 
-  const messages = [
-    { role: 'system', content: SYSTEM_INSTRUCTION },
-    ...history.slice(-10).map(msg => ({
-      role: msg.role === 'user' ? 'user' : 'assistant',
-      content: msg.content
-    })),
-    {
-      role: 'user',
-      content: `[CONTEXT]\n${featureContext}\n\n[FILES]\n${fileContext}\n\n[REQUEST]\n${prompt}`
-    }
-  ];
+  let lastError: any = null;
 
-  try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://myselfide.online",
-        "X-Title": "MYSELF IDE",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: messages,
-        response_format: { type: "json_object" },
-        temperature: 0.4
-      }),
-      signal
-    });
-
-    const data = await response.json();
+  // KEY ROTATION LOGIC
+  // We loop through available keys. If one fails with a quota error, we try the next.
+  for (let i = 0; i < keys.length; i++) {
+    const apiKey = keys[i];
     
-    if (data.error) {
-        throw new Error(data.error.message || "OpenRouter Error");
-    }
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      
+      const response = await ai.models.generateContent({
+        model: modelName,
+        contents: [
+          { role: 'user', parts: [{ text: `[SYSTEM]\n${SYSTEM_INSTRUCTION}\n\n[CONTEXT]\n${featureContext}\n\n[FILES]\n${fileContext}\n\n[REQUEST]\n${prompt}` }] }
+        ],
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              message: { type: Type.STRING },
+              files: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: { type: Type.STRING },
+                    content: { type: Type.STRING }
+                  },
+                  required: ["name", "content"]
+                }
+              }
+            },
+            required: ["message", "files"]
+          },
+          temperature: 0.3,
+        },
+      });
 
-    const content = data.choices[0].message.content;
-    const result = JSON.parse(content);
-    
-    const modifications: Record<string, string> = {};
-    if (result.files) {
-        result.files.forEach((f: any) => { 
-            modifications[f.name] = f.content; 
-        });
-    }
+      const result = JSON.parse(response.text || "{}");
+      const modifications: Record<string, string> = {};
+      if (result.files) {
+          result.files.forEach((f: any) => { modifications[f.name] = f.content; });
+      }
 
-    return {
-      text: result.message || "WAI Engine has updated your files.",
-      files: modifications
-    };
-  } catch (err: any) {
-    console.error("OpenRouter API Error:", err);
-    throw new Error(err.message || "Failed to connect to AI engine.");
+      return {
+        text: result.message || "WAI Engine synchronized your code.",
+        files: modifications
+      };
+
+    } catch (err: any) {
+      console.warn(`Key ${i + 1}/${keys.length} failed:`, err.message);
+      lastError = err;
+      
+      // If error is NOT related to quota (429) or permissions (403), throw immediately (don't rotate for bad requests)
+      // However, usually we want to rotate on 429 (Too Many Requests) or 503 (Service Unavailable)
+      const isQuotaError = err.message?.includes('429') || err.message?.includes('403') || err.message?.includes('503') || err.message?.includes('quota');
+      
+      if (!isQuotaError && i < keys.length - 1) {
+          // If it's some other random network error, we might still want to try the next key just in case
+          continue; 
+      }
+      
+      if (i === keys.length - 1) {
+          // All keys failed
+          console.error("All API keys exhausted or failed.");
+          throw new Error(`WAI Engine Failed: ${lastError?.message || "All API keys exhausted."}`);
+      }
+      // Otherwise, continue loop to next key
+    }
   }
+
+  throw new Error("Unexpected end of key rotation.");
 };

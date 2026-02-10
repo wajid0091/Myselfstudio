@@ -10,181 +10,117 @@ import ChatInterface from './components/ChatInterface';
 import ProjectSettingsModal from './components/ProjectSettingsModal';
 import Dashboard from './components/Dashboard';
 import PublishModal from './components/PublishModal';
-import { Download, Boxes, Play, ArrowLeft, Sparkles, Globe, Loader2, Smartphone } from 'lucide-react';
+import { Download, Play, ArrowLeft, Sparkles, Globe, Smartphone, Maximize2, Monitor } from 'lucide-react';
 import { usePWA } from './hooks/usePWA';
 import JSZip from 'jszip';
 
 const IDE: React.FC = () => {
-  const { files, activeProjectId, closeProject, projects } = useFile();
+  const { files, activeProjectId, closeProject, activeProject } = useFile();
   const { isInstallable, installApp } = usePWA();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   
   // Layout Visibility States
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [chatExpanded, setChatExpanded] = useState(false); 
+  const [isChatOpen, setIsChatOpen] = useState(true);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
 
-  // Full Screen Preview State
-  const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
-
-  const currentProjectName = projects.find(p => p.id === activeProjectId)?.name || 'Project';
-
-  const handleDownload = async () => {
+  const downloadProject = async () => {
     const zip = new JSZip();
-    
     files.forEach(file => {
       zip.file(file.name, file.content);
     });
-
-    if (!files.some(f => f.name === '_redirects')) {
-        zip.file('_redirects', '/* /index.html 200');
-    }
-
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${currentProjectName.replace(/\s+/g, '_')}.zip`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(content);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${activeProject?.name || 'wai-project'}.zip`;
+    link.click();
   };
 
+  if (!activeProjectId) return <Dashboard />;
+
   return (
-    <div className="flex flex-col h-screen h-[100dvh] bg-ide-bg text-ide-fg font-sans overflow-hidden">
+    <div className="h-screen w-screen bg-[#0F1117] flex flex-col overflow-hidden text-gray-300 select-none">
       {/* Top Navigation */}
-      <header className="h-12 bg-ide-panel border-b border-ide-border flex items-center justify-between px-4 shrink-0 shadow-sm z-10">
+      <header className="h-14 bg-[#16181D] border-b border-white/5 flex items-center justify-between px-4 shrink-0 z-50">
         <div className="flex items-center gap-4">
-           <button 
-            onClick={closeProject}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-            title="Back to Dashboard"
-          >
+          <button onClick={closeProject} className="p-2 hover:bg-white/5 rounded-lg transition-all text-gray-400 hover:text-white">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          
-          <div className="flex items-center gap-3">
-             <div className="w-8 h-8 bg-blue-600/20 rounded flex items-center justify-center">
-                <Boxes className="w-4 h-4 text-blue-400" />
-             </div>
-             <h1 className="font-bold text-gray-200 tracking-tight text-sm hidden sm:block">{currentProjectName}</h1>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-indigo-500" />
+            <h1 className="text-sm font-black text-white uppercase tracking-tighter italic">
+              {activeProject?.name || 'Project'}
+            </h1>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
-           {isInstallable && (
-               <button 
-                 onClick={installApp}
-                 className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                 title="Install App"
-               >
-                 <Smartphone className="w-4 h-4" />
-               </button>
-           )}
-
            <button 
-            onClick={() => setIsFullScreenPreview(true)}
-            className="flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-bold bg-green-600 hover:bg-green-500 text-white shadow-sm transition-all hover:shadow-green-900/20"
-            title="Run Project"
+            onClick={() => setIsPreviewOpen(!isPreviewOpen)} 
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase transition-all shadow-lg ${isPreviewOpen ? 'bg-indigo-600 text-white shadow-indigo-900/20' : 'bg-white/5 text-gray-400 hover:text-white'}`}
           >
-             <Play className="w-3 h-3 fill-current" />
-             PREVIEW
+            <Play className="w-4 h-4" /> {isPreviewOpen ? 'Close View' : 'Live Preview'}
           </button>
 
-          <div className="h-5 w-px bg-white/10 mx-1"></div>
+          <div className="h-6 w-px bg-white/5 mx-2"></div>
 
-          <button 
-            onClick={() => setIsPublishModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
-            title="Publish to Community"
-          >
-             <Globe className="w-3 h-3" /> Publish
-          </button>
-
-          <button 
-            onClick={handleDownload}
-            className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-            title="Export Static Website"
-          >
+          <button onClick={downloadProject} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-all">
             <Download className="w-4 h-4" />
           </button>
-          <button 
-            onClick={() => setIsSettingsOpen(true)}
-            className="p-2 text-gray-400 hover:text-yellow-400 hover:bg-white/10 rounded-lg transition-colors"
-            title="Project Features"
-          >
-            <Sparkles className="w-4 h-4" />
+          
+          <button onClick={() => setIsSettingsOpen(true)} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-all">
+            <Globe className="w-4 h-4" />
           </button>
         </div>
       </header>
 
-      {/* Main Content Area */}
+      {/* Main Workspace */}
       <div className="flex-1 flex overflow-hidden relative">
-        {showSidebar && <Sidebar />}
-
-        <div className="flex-1 flex flex-col min-w-0 relative h-full">
-          {/* Editor Area */}
-          <div className="flex-1 overflow-hidden relative">
-            <EditorWindow 
-                onToggleSidebar={() => setShowSidebar(!showSidebar)} 
-                isSidebarOpen={showSidebar}
-            />
-          </div>
+        {isSidebarOpen && <Sidebar />}
+        
+        <main className="flex-1 flex flex-col min-w-0 bg-[#0F1117] relative">
+          <EditorWindow onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
           
-          {/* Chat Interface Container - Height refined for mobile visibility */}
-          <div 
-            className={`border-t border-ide-border transition-all duration-300 z-40 bg-[#16181D] flex flex-col shrink-0 ${
-              chatExpanded ? 'h-[65%] md:h-[60%] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]' : 'h-12'
-            }`}
-          >
-            <ChatInterface 
-                isOpen={chatExpanded} 
-                onToggle={() => setChatExpanded(!chatExpanded)} 
-            />
+          {/* Draggable/Fixed Chat Interface */}
+          <div className={`absolute bottom-0 left-0 right-0 z-[60] transition-all duration-300 ${isChatOpen ? 'h-1/2 md:h-2/5' : 'h-12'}`}>
+            <ChatInterface isOpen={isChatOpen} onToggle={() => setIsChatOpen(!isChatOpen)} />
           </div>
-        </div>
+        </main>
+
+        {/* Live Preview Panel */}
+        {isPreviewOpen && (
+          <div className="fixed inset-0 md:relative md:inset-auto md:w-[450px] lg:w-[550px] xl:w-[650px] bg-white z-[70] md:z-auto animate-in slide-in-from-right duration-300 border-l border-white/5 shadow-2xl">
+            <div className="absolute top-4 left-4 z-[80] flex gap-2">
+                <button 
+                    onClick={() => setPreviewMode(previewMode === 'desktop' ? 'mobile' : 'desktop')}
+                    className="p-2 bg-black/80 backdrop-blur-md rounded-lg text-white shadow-xl"
+                >
+                    {previewMode === 'desktop' ? <Smartphone className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
+                </button>
+            </div>
+            <div className={`h-full w-full transition-all duration-500 mx-auto ${previewMode === 'mobile' ? 'max-w-[375px] my-10 rounded-[3rem] border-[12px] border-black shadow-2xl h-[80%] overflow-hidden' : 'w-full h-full'}`}>
+                <Preview onClose={() => setIsPreviewOpen(false)} />
+            </div>
+          </div>
+        )}
       </div>
 
       <ProjectSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-      {activeProjectId && <PublishModal isOpen={isPublishModalOpen} onClose={() => setIsPublishModalOpen(false)} projectId={activeProjectId} />}
-
-      {isFullScreenPreview && (
-        <div className="fixed inset-0 z-50 bg-ide-bg flex flex-col animate-in fade-in duration-200 h-screen h-[100dvh]">
-          <div className="w-full h-full bg-white relative">
-             <Preview className="w-full h-full" onClose={() => setIsFullScreenPreview(false)} isFullScreen={true} />
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-const Main: React.FC = () => {
-    const { loading } = useAuth();
-    const { activeProjectId } = useFile();
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-[#0F1117] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-            </div>
-        );
-    }
-
-    return activeProjectId ? <IDE /> : <Dashboard />;
-}
-
-const App: React.FC = () => {
-  return (
-    <AuthProvider>
-        <SettingsProvider>
-            <FileProvider>
-                <Main />
-            </FileProvider>
-        </SettingsProvider>
-    </AuthProvider>
-  );
-};
+const App: React.FC = () => (
+  <AuthProvider>
+    <SettingsProvider>
+      <FileProvider>
+        <IDE />
+      </FileProvider>
+    </SettingsProvider>
+  </AuthProvider>
+);
 
 export default App;
