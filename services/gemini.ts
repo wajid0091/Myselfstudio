@@ -11,12 +11,12 @@ CRITICAL RULES:
 1. ALWAYS return a valid JSON object.
 2. Provide the FULL content of any file you modify.
 3. Maintain the professional coding standards of Wajid Ali's IDE.
-4. MEMORY & CONTEXT: You must remember previous user messages and project state. If the user refers to "it" or "that", look at the history.
-5. FEATURES IMPLICIT GENERATION:
-   - If "PWA" is enabled or requested, YOU MUST generate "manifest.json" and "sw.js".
-   - If "SEO" is enabled, YOU MUST generate "robots.txt" and "sitemap.xml".
-   - If "Admin Panel" is enabled, YOU MUST generate "admin.html" and "admin.js" with a functional dashboard UI.
-   - If "Firebase Rules" is enabled, YOU MUST generate "firestore.rules".
+4. MEMORY & CONTEXT: You must remember previous user messages and project state. If the user refers to "it" or "that", look at the history provided in [CONVERSATION HISTORY].
+5. FEATURES IMPLICIT GENERATION (STRICT ENFORCEMENT):
+   - If PWA is enabled (enablePWA=true), YOU MUST ALWAYS ensure "manifest.json" and "sw.js" exist and are valid.
+   - If SEO is enabled (enableSEO=true), YOU MUST ALWAYS ensure "robots.txt" and "sitemap.xml" exist.
+   - If Admin Panel is enabled (enableAdminPanel=true), YOU MUST generate/maintain "admin.html" with a functional dashboard UI.
+   - If Firebase Rules is enabled (enableFirebaseRules=true), YOU MUST generate "firestore.rules".
 
 RESPONSE FORMAT (JSON ONLY):
 {
@@ -62,9 +62,9 @@ export const generateCode = async (
 [PROJECT CONFIGURATION]
 - Tailwind CSS: ${settings.enableTailwind ? 'ENABLED' : 'DISABLED'}
 - Bootstrap 5: ${settings.enableBootstrap ? 'ENABLED' : 'DISABLED'}
-- SEO Optimization: ${settings.enableSEO ? 'ACTIVE (Generate robots.txt/sitemap.xml)' : 'INACTIVE'}
-- PWA Support: ${settings.enablePWA ? 'ACTIVE (Generate manifest.json/sw.js)' : 'INACTIVE'}
-- Admin Panel: ${settings.enableAdminPanel ? 'ACTIVE (Generate admin.html)' : 'INACTIVE'}
+- SEO Optimization: ${settings.enableSEO ? 'ACTIVE (Ensure robots.txt/sitemap.xml exist)' : 'INACTIVE'}
+- PWA Support: ${settings.enablePWA ? 'ACTIVE (Ensure manifest.json/sw.js exist)' : 'INACTIVE'}
+- Admin Panel: ${settings.enableAdminPanel ? 'ACTIVE (Ensure admin.html exists)' : 'INACTIVE'}
 - Firebase Security: ${settings.enableFirebaseRules ? 'ACTIVE' : 'INACTIVE'}
 `;
 
@@ -114,7 +114,7 @@ ${prompt}
       console.log(`[WAI Engine] Using Admin OpenRouter Model: ${activeModel.name}`);
       const apiKey = process.env.OPENROUTER_API_KEY;
 
-      if (!apiKey) throw new Error("Server Configuration Error: OpenRouter API Key not found.");
+      if (!apiKey) throw new Error("Server Configuration Error: OpenRouter API Key not found. Please set VITE_OPENROUTER_API_KEY in hosting settings.");
 
       try {
           const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -177,14 +177,14 @@ ${prompt}
 
   if (apiKeyToUse !== "NATIVE_ROTATION" && apiKeyToUse) {
       // Single Custom Key Attempt
-      return await callGemini(apiKeyToUse, modelId, fullPrompt);
+      return await callGeminiWithRetry(apiKeyToUse, modelId, fullPrompt);
   } else {
       // Native Rotation Attempt
       const nativeKeys = getNativeGeminiKeys();
       let lastError;
       for (const key of nativeKeys) {
           try {
-              return await callGemini(key, DEFAULT_MODEL, fullPrompt);
+              return await callGeminiWithRetry(key, DEFAULT_MODEL, fullPrompt);
           } catch (e: any) {
               console.warn("Native Key failed, rotating...", e.message);
               lastError = e;
@@ -193,6 +193,27 @@ ${prompt}
       throw new Error(`All System Keys Failed. Last Error: ${lastError?.message}`);
   }
 };
+
+// --- HELPER: CALL GEMINI WITH RETRY ---
+// Retries on 503 Service Unavailable errors
+async function callGeminiWithRetry(apiKey: string, modelId: string, prompt: string, retries = 3): Promise<any> {
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+    
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await callGemini(apiKey, modelId, prompt);
+        } catch (error: any) {
+            // Check if error is 503 (Service Unavailable) or 429 (Too Many Requests)
+            const isOverloaded = error.message?.includes('503') || error.message?.includes('429');
+            if (isOverloaded && i < retries - 1) {
+                console.warn(`Gemini Model Overloaded (Attempt ${i + 1}/${retries}). Retrying in 2s...`);
+                await delay(2000 * (i + 1)); // Exponential backoff: 2s, 4s...
+                continue;
+            }
+            throw error;
+        }
+    }
+}
 
 // --- HELPER: CALL GEMINI ---
 async function callGemini(apiKey: string, modelId: string, prompt: string) {

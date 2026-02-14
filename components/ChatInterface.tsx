@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import { 
   Send, Loader2, ChevronDown, ChevronUp, Paperclip, X, Sparkles, 
   FileCode2, Eye, Maximize2, ShieldCheck, Zap, Image as ImageIcon, FileText,
-  ArrowRight, Code2, Check, Database, Bot, Key, Globe
+  ArrowRight, Code2, Check, Database, Bot, Key, Globe, Lock
 } from 'lucide-react';
 import { useFile } from '../context/FileContext';
 import { useSettings } from '../context/SettingsContext';
@@ -141,13 +141,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle, onOpenS
       else if (adminModel) activeModelName = adminModel.name;
   }
 
-  // Filter Allowed Admin Models based on Plan
-  const allowedAdminModels = adminModels.filter(m => {
-      // If plan config isn't loaded yet, default to hiding strict models or maybe showing all?
-      // Strict Mode: Only show models explicitly in plan's allowedModels list
-      if (!currentPlanConfig) return false;
-      return currentPlanConfig.allowedModels?.includes(m.id);
-  });
+  // Check if a model is allowed for the current plan
+  const isModelAllowed = (modelId: string) => {
+      // Gemini Flash is always allowed
+      if(modelId === 'gemini-3-flash-preview') return true;
+      if(!currentPlanConfig) return false;
+      return currentPlanConfig.allowedModels?.includes(modelId);
+  };
 
   return (
     <div className={containerClasses}>
@@ -177,15 +177,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle, onOpenS
                     <select 
                         value={settings.selectedModelId} 
                         onChange={e => updateSettings({ selectedModelId: e.target.value })} 
-                        className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-[8px] text-gray-400 font-bold uppercase outline-none max-w-[120px] truncate"
+                        className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-[8px] text-gray-400 font-bold uppercase outline-none max-w-[150px] truncate"
                     >
                         <option value="gemini-3-flash-preview">Gemini 3 Flash (System)</option>
                         
-                        {allowedAdminModels.length > 0 && (
-                            <optgroup label={`Included in ${userProfile?.plan || 'Plan'}`}>
-                                {allowedAdminModels.map(m => (
-                                    <option key={m.id} value={m.id}>{m.name}</option>
-                                ))}
+                        {adminModels.length > 0 && (
+                            <optgroup label="Premium Models">
+                                {adminModels.map(m => {
+                                    const allowed = isModelAllowed(m.id);
+                                    return (
+                                        <option key={m.id} value={m.id} disabled={!allowed}>
+                                            {m.name} {!allowed ? '(LOCKED - Upgrade Plan)' : ''}
+                                        </option>
+                                    )
+                                })}
                             </optgroup>
                         )}
 

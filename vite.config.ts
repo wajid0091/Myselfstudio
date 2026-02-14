@@ -7,6 +7,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, (process as any).cwd(), '');
   
   // Explicitly capture specific API keys requested by the user
+  // Checks both VITE_ prefixed and standard names to ensure hosting compatibility
   const apiKey = env.API_KEY || env.VITE_API_KEY || '';
   const apiKey1 = env.API_KEY_1 || env.VITE_API_KEY_1 || '';
   const apiKey2 = env.API_KEY_2 || env.VITE_API_KEY_2 || '';
