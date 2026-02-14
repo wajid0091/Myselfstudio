@@ -270,6 +270,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const closeProject = () => setActiveProjectId(null);
 
+  const renameProject = async (projectId: string, newName: string) => {
+      const p = projects.find(x => x.id === projectId);
+      if (p) await saveProject({ ...p, name: newName });
+  };
+
   const renameFile = (old: string, next: string) => {
       if (!activeProject) return;
       const files = activeProject.files.map(f => f.name === old ? { ...f, name: next } : f);
@@ -298,9 +303,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <FileContext.Provider value={{
-      projects, communityProjects, userProfile, activeProjectId, files, messages, selectedFile, loading,
-      createProject, openProject, closeProject, deleteProject, renameProject: async () => {}, renamePublicProject: async () => {},
-      publishProject, unpublishProject, cloneCommunityProject, toggleLike, deductCredit,
+      projects, communityProjects, userProfile, activeProjectId, files, messages, selectedFile, activeProject, loading,
+      createProject, openProject, closeProject, deleteProject, renameProject, renamePublicProject: async () => {},
+      publishProject, unpublishProject, cloneCommunityProject, toggleLike, deductCredit, saveProject,
       selectFile, updateFileContent, addFile, importFile, deleteFile, renameFile, addMessage, clearMessages: () => {}
     }}>
       {children}

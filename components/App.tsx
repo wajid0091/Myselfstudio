@@ -49,10 +49,10 @@ const IDE: React.FC = () => {
           <button onClick={closeProject} className="p-2 hover:bg-white/5 rounded-lg transition-all text-gray-400 hover:text-white">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-indigo-500" />
-            <h1 className="text-sm font-black text-white uppercase tracking-tighter italic">
-              {activeProject?.name || 'Project'}
+          <div className="flex items-center">
+            {/* CLEAN HEADER: No icon, just simple text as requested */}
+            <h1 className="text-sm font-bold text-gray-200 tracking-wide">
+              {activeProject?.name || 'Untitled Project'}
             </h1>
           </div>
         </div>

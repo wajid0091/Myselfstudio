@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+
+import React, { useMemo, useState, useEffect } from 'react';
 import { useSettings } from '../context/SettingsContext';
 import { useFile } from '../context/FileContext';
 import { X, Save, Search, Smartphone, Database, Lock, Shield, Image, Palette, Layout, Key, Sparkles, Sliders, Monitor, Globe } from 'lucide-react';
@@ -10,12 +11,35 @@ interface Props {
 
 const ProjectSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { settings, updateSettings } = useSettings();
-  const { userProfile } = useFile();
+  const { userProfile, activeProject, saveProject } = useFile();
+  const [localFirebaseConfig, setLocalFirebaseConfig] = useState('');
+
+  // Load project specific config when modal opens
+  useEffect(() => {
+    if (isOpen && activeProject) {
+        setLocalFirebaseConfig(activeProject.firebaseConfig || '');
+    }
+  }, [isOpen, activeProject]);
 
   const hasAccess = (featureKey: string) => {
       if (userProfile?.isAdmin) return true;
       if (!userProfile) return false;
       return userProfile.features?.includes(featureKey);
+  };
+
+  const handleSave = async () => {
+      // 1. Update Global Settings
+      // (Features like toggles are still global user preferences in this context or could be per project, 
+      // keeping them global for now as per original design, except Firebase)
+      
+      // 2. Update Project Specific Settings
+      if (activeProject) {
+          await saveProject({
+              ...activeProject,
+              firebaseConfig: localFirebaseConfig
+          });
+      }
+      onClose();
   };
 
   const FEATURES_LIST = [
@@ -97,14 +121,17 @@ const ProjectSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         />
                      </div>
 
-                     <div>
-                        <label className="text-[11px] font-bold text-gray-500 block mb-1.5 flex items-center gap-2">
-                            <Database className="w-3 h-3" /> Firebase SDK Config
+                     <div className="bg-[#1A1D24] border border-blue-500/20 rounded-lg p-3">
+                        <label className="text-[11px] font-bold text-blue-400 block mb-1.5 flex items-center gap-2">
+                            <Database className="w-3 h-3" /> Project Firebase Config
                         </label>
+                        <p className="text-[10px] text-gray-500 mb-2">
+                           Paste your Firebase SDK config object here. This is specific to <strong>{activeProject?.name}</strong>.
+                        </p>
                         <textarea
-                            value={settings.firebaseConfig}
-                            onChange={(e) => updateSettings({ firebaseConfig: e.target.value })}
-                            placeholder="// Paste firebaseConfig object here..."
+                            value={localFirebaseConfig}
+                            onChange={(e) => setLocalFirebaseConfig(e.target.value)}
+                            placeholder="// const firebaseConfig = { ... }"
                             className="w-full h-24 bg-black/40 border border-white/10 rounded-lg p-2.5 text-xs text-gray-300 font-mono focus:outline-none focus:border-blue-500 resize-none"
                         />
                     </div>
@@ -115,7 +142,7 @@ const ProjectSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
         
         <div className="p-4 border-t border-[#333] flex justify-end shrink-0 bg-[#1E2028]">
             <button 
-                onClick={onClose}
+                onClick={handleSave}
                 className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-900/20 transition-colors"
             >
                 <Save className="w-4 h-4" /> Save Configuration

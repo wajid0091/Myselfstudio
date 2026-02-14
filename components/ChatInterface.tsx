@@ -4,30 +4,27 @@ import ReactMarkdown from 'react-markdown';
 import { 
   Send, Loader2, ChevronDown, ChevronUp, Paperclip, X, Sparkles, 
   FileCode2, Eye, Maximize2, ShieldCheck, Zap, Image as ImageIcon, FileText,
-  ArrowRight, Code2, Check
+  ArrowRight, Code2, Check, Database, Bot, Key, Globe
 } from 'lucide-react';
 import { useFile } from '../context/FileContext';
 import { useSettings } from '../context/SettingsContext';
+import { useAuth } from '../context/AuthContext';
 import { generateCode } from '../services/gemini';
 import { uploadImageToImgBB } from '../services/imgbb';
-import { Message, GeneratedFile, Suggestion } from '../types';
+import { Message, GeneratedFile, Suggestion, PlanConfig } from '../types';
 import { db } from '../services/firebase';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, get } from 'firebase/database';
 
 interface ChatInterfaceProps {
   isOpen: boolean;
   onToggle: () => void;
+  onOpenSettings?: () => void;
 }
 
-const MODELS = [
-  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash (WAI)' },
-  { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash' },
-  { id: 'gemini-1.5-pro-latest', name: 'Gemini 1.5 Pro' },
-];
-
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle, onOpenSettings }) => {
   const { files, messages, addMessage, addFile } = useFile();
-  const { settings, updateSettings } = useSettings();
+  const { settings, adminModels, updateSettings } = useSettings();
+  const { userProfile } = useAuth();
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -37,13 +34,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<{name: string, type: string, url?: string}[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [currentPlanConfig, setCurrentPlanConfig] = useState<PlanConfig | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // Fetch Suggestions
     const suggRef = ref(db, 'system_settings/suggestions');
-    const unsub = onValue(suggRef, (snapshot) => {
+    const unsubSugg = onValue(suggRef, (snapshot) => {
         if(snapshot.exists()) {
             const data = snapshot.val();
             const list = Object.entries(data).map(([id, val]: [string, any]) => ({...val, id})) as Suggestion[];
@@ -51,11 +50,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
         }
     });
 
+    // Fetch Current Plan Config for Model Permissions
+    if (userProfile?.plan) {
+        const planRef = ref(db, `system_settings/plans/${userProfile.plan}`);
+        get(planRef).then(snap => {
+            if(snap.exists()) {
+                setCurrentPlanConfig(snap.val());
+            }
+        });
+    }
+
     if (scrollRef.current) {
       scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     }
-    return () => unsub();
-  }, [messages, loading]);
+    return () => {
+        unsubSugg();
+    };
+  }, [messages, loading, userProfile?.plan]);
 
   const handleApply = (msgId: number, fileName: string, content: string) => {
       addFile(fileName, content);
@@ -102,7 +113,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
     setLoading(true);
 
     try {
-      const response = await generateCode(finalInput, files, settings, [], messages, true);
+      // Pass adminModels to generator so it can resolve ID lookups
+      // Also pass messages (history) so the AI remembers context
+      const response = await generateCode(finalInput, files, settings, adminModels, messages, true);
       const aiFiles: GeneratedFile[] = Object.entries(response.files).map(([name, content]) => ({
           name, content,
           language: name.endsWith('.html') ? 'html' : name.endsWith('.css') ? 'css' : (name.endsWith('.js') ? 'javascript' : 'plaintext')
@@ -119,26 +132,72 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
     ? 'fixed inset-0 z-[100] bg-[#16181D] flex flex-col' 
     : `flex flex-col bg-[#16181D] h-full overflow-hidden transition-all duration-300 shadow-2xl relative z-[50] ${isOpen ? 'flex-1' : 'h-12'}`;
 
+  // Resolve Active Model Name
+  let activeModelName = 'Gemini 3 Flash (System)'; // Default Label
+  if (settings.selectedModelId !== 'gemini-3-flash-preview') {
+      const userModel = settings.userGeminiModels.find(m => m.id === settings.selectedModelId);
+      const adminModel = adminModels.find(m => m.id === settings.selectedModelId);
+      if (userModel) activeModelName = `${userModel.name} (Custom)`;
+      else if (adminModel) activeModelName = adminModel.name;
+  }
+
+  // Filter Allowed Admin Models based on Plan
+  const allowedAdminModels = adminModels.filter(m => {
+      // If plan config isn't loaded yet, default to hiding strict models or maybe showing all?
+      // Strict Mode: Only show models explicitly in plan's allowedModels list
+      if (!currentPlanConfig) return false;
+      return currentPlanConfig.allowedModels?.includes(m.id);
+  });
+
   return (
     <div className={containerClasses}>
-      {/* Clickable Header Area - Height synchronized to h-12 to match App.tsx */}
+      {/* Clickable Header Area */}
       <div 
         className="h-12 bg-[#1E2028] border-b border-white/5 flex items-center justify-between px-5 cursor-pointer shrink-0" 
         onClick={isFullScreen ? undefined : onToggle}
       >
         <div className="flex items-center gap-3">
-          <Sparkles className={`w-4 h-4 text-indigo-400 ${loading ? 'animate-pulse' : ''}`} />
+          <Bot className={`w-5 h-5 text-indigo-400 ${loading ? 'animate-bounce' : ''}`} />
           <div className="flex flex-col">
-            <span className="text-[9px] font-black text-white uppercase italic tracking-widest leading-none">WAI Assistant</span>
-            <span className="text-[7px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">{settings.selectedModel || 'Gemini 3 Flash'}</span>
+            <span className="text-[9px] font-black text-white uppercase italic tracking-widest leading-none">WAI Console</span>
+            <span className="text-[7px] text-gray-500 font-bold uppercase tracking-widest mt-0.5 truncate max-w-[120px]">
+                {activeModelName}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-4" onClick={e => e.stopPropagation()}>
             {(isOpen || isFullScreen) && (
                 <>
-                    <select value={settings.selectedModel} onChange={e => updateSettings({ selectedModel: e.target.value })} className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-[8px] text-gray-400 font-bold uppercase outline-none">
-                        {MODELS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    <button onClick={onOpenSettings} className="p-1.5 text-indigo-400 hover:text-white bg-indigo-500/10 rounded-lg transition-colors flex items-center gap-1" title="Settings">
+                        <Database className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="h-4 w-px bg-white/10"></div>
+                    
+                    {/* Unified Model Dropdown */}
+                    <select 
+                        value={settings.selectedModelId} 
+                        onChange={e => updateSettings({ selectedModelId: e.target.value })} 
+                        className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-[8px] text-gray-400 font-bold uppercase outline-none max-w-[120px] truncate"
+                    >
+                        <option value="gemini-3-flash-preview">Gemini 3 Flash (System)</option>
+                        
+                        {allowedAdminModels.length > 0 && (
+                            <optgroup label={`Included in ${userProfile?.plan || 'Plan'}`}>
+                                {allowedAdminModels.map(m => (
+                                    <option key={m.id} value={m.id}>{m.name}</option>
+                                ))}
+                            </optgroup>
+                        )}
+
+                        {settings.userGeminiModels.length > 0 && (
+                            <optgroup label="My Custom Keys">
+                                {settings.userGeminiModels.map(m => (
+                                    <option key={m.id} value={m.id}>{m.name}</option>
+                                ))}
+                            </optgroup>
+                        )}
                     </select>
+
                     <button onClick={() => setIsFullScreen(!isFullScreen)} className="p-1.5 text-gray-400 hover:text-white transition-colors"><Maximize2 className="w-4 h-4" /></button>
                 </>
             )}
@@ -156,11 +215,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
             {messages.length === 0 && (
                 <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-5">
                     <div className="w-16 h-16 bg-indigo-600/10 rounded-[2rem] flex items-center justify-center border border-indigo-500/20 shadow-xl">
-                        <Code2 className="w-8 h-8 text-indigo-500" />
+                        <Bot className="w-8 h-8 text-indigo-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-black text-white uppercase tracking-tighter italic">WAI Assistant Engine</h3>
-                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed mt-2 opacity-60">Ready to build something amazing? <br/> Just ask Wajid Ali's AI Architect.</p>
+                        <h3 className="text-lg font-black text-white uppercase tracking-tighter italic">WAI Assistant Console</h3>
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed mt-2 opacity-60">Initialize Command Logic... <br/> Waiting for input.</p>
+                        
+                        {/* Dynamic status badge based on model selection */}
+                        <div className="mt-4 p-2 bg-white/5 border border-white/10 rounded-lg inline-flex items-center gap-2">
+                             {settings.selectedModelId === 'gemini-3-flash-preview' && <><Sparkles className="w-3 h-3 text-yellow-500" /><span className="text-[9px] uppercase font-bold text-gray-400">System Mode</span></>}
+                             {settings.userGeminiModels.some(m => m.id === settings.selectedModelId) && <><Key className="w-3 h-3 text-green-500" /><span className="text-[9px] uppercase font-bold text-green-400">Custom Key Active</span></>}
+                             {adminModels.some(m => m.id === settings.selectedModelId) && <><Globe className="w-3 h-3 text-blue-500" /><span className="text-[9px] uppercase font-bold text-blue-400">OpenRouter Cloud</span></>}
+                        </div>
                     </div>
                 </div>
             )}
@@ -196,7 +262,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
                 <div className="flex flex-col items-start gap-2">
                     <div className="bg-[#1E2028] text-indigo-400 rounded-xl p-3.5 border border-white/5 text-[9px] font-black uppercase animate-pulse inline-block shadow-lg">
                          <Loader2 className="w-3.5 h-3.5 animate-spin inline mr-2" />
-                         Thinking...
+                         Processing...
                     </div>
                 </div>
             )}
@@ -222,7 +288,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onToggle }) => {
                         value={input} 
                         onChange={e => setInput(e.target.value)} 
                         onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()} 
-                        placeholder="Type your request..." 
+                        placeholder="Type your command..." 
                         className="flex-1 bg-transparent text-gray-100 py-4 text-sm focus:outline-none resize-none min-h-[50px] custom-scrollbar" 
                         rows={1} 
                     />

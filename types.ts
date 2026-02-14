@@ -15,6 +15,7 @@ export interface Project {
   isPublic?: boolean; 
   likes?: number;
   tags?: string[];
+  firebaseConfig?: string; // Per-project Firebase Config
 }
 
 export interface UserProfile {
@@ -51,6 +52,16 @@ export interface Message {
   generatedFiles?: GeneratedFile[]; 
 }
 
+// New Model Interface
+export interface AIModel {
+    id: string;
+    name: string;
+    provider: 'gemini' | 'openrouter';
+    modelId: string; // The actual string sent to API (e.g. "gemini-2.0-flash" or "anthropic/claude-3")
+    apiKey?: string; // Optional: Only for user custom keys
+    isCustom?: boolean; // True if added by user
+}
+
 export interface Settings {
   enableTailwind: boolean;
   enableBootstrap: boolean;
@@ -62,8 +73,11 @@ export interface Settings {
   enableMobileResponsive: boolean;
   enableDesktopResponsive: boolean;
   customDomain: string;
-  firebaseConfig: string; 
-  selectedModel: string;
+  firebaseConfig: string;
+  
+  // Model Management
+  selectedModelId: string; // Just the ID reference
+  userGeminiModels: AIModel[]; // User added keys
   imgBBApiKey?: string;
 }
 
@@ -82,11 +96,13 @@ export interface FileContextType {
   files: File[];
   messages: Message[]; 
   selectedFile: File | null;
+  activeProject: Project | undefined; // Exposed for direct access
   loading: boolean;
   createProject: (name: string) => Promise<string>; 
   openProject: (id: string) => void;
   closeProject: () => void;
   deleteProject: (id: string) => Promise<void>;
+  saveProject: (project: Project) => Promise<void>; // Exposed for settings updates
   renameProject: (projectId: string, newName: string) => Promise<void>;
   renamePublicProject: (publicProjectId: string, newName: string) => Promise<void>;
   publishProject: (projectId: string, publicName: string, description: string, tags: string[]) => Promise<boolean>; 
@@ -106,7 +122,10 @@ export interface FileContextType {
 
 export interface SettingsContextType {
   settings: Settings;
+  adminModels: AIModel[]; // Models loaded from Firebase (OpenRouter)
   updateSettings: (newSettings: Partial<Settings>) => void;
+  addUserModel: (name: string, apiKey: string) => void;
+  removeUserModel: (id: string) => void;
 }
 
 export interface AuthContextType {
@@ -149,6 +168,7 @@ export interface PlanConfig {
   dailyCredits: number;
   copyCredits: number;
   features: string[];
+  allowedModels?: string[]; // IDs of adminModels allowed in this plan
 }
 
 export interface Transaction {

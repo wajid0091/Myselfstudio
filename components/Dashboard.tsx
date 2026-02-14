@@ -5,13 +5,15 @@ import { useAuth } from '../context/AuthContext';
 import { 
     Plus, Code2, Heart, FolderOpen, Trash2, 
     Globe, Search, Zap, Download,
-    UserCircle, LogOut, ShieldCheck, ChevronRight, X
+    UserCircle, LogOut, ShieldCheck, ChevronRight, X, Key, Settings, Crown
 } from 'lucide-react';
 import { CommunityProject } from '../types';
 import PublicPreview from './PublicPreview';
 import AuthScreen from './AuthScreen';
 import SuperAdminPanel from './SuperAdminPanel';
 import PublishModal from './PublishModal';
+import SettingsModal from './SettingsModal';
+import PlansModal from './PlansModal';
 import { usePWA } from '../hooks/usePWA';
 
 const LiveThumbnail: React.FC<{ project: CommunityProject }> = ({ project }) => {
@@ -52,6 +54,8 @@ const Dashboard: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [viewingProject, setViewingProject] = useState<CommunityProject | null>(null);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPlansOpen, setIsPlansOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState('New Project');
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -88,47 +92,67 @@ const Dashboard: React.FC = () => {
               )}
               
               {user ? (
-                  <div className="relative">
-                      <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="w-10 h-10 rounded-full border border-white/10 p-0.5 hover:border-indigo-500 transition-colors">
-                          <div className="w-full h-full rounded-full bg-indigo-600/20 flex items-center justify-center text-indigo-400 font-black overflow-hidden uppercase">
-                              {userProfile?.avatar ? <img src={userProfile.avatar} className="w-full h-full object-cover" alt="Profile" /> : userProfile?.name?.charAt(0)}
-                          </div>
+                  <div className="flex items-center gap-3">
+                      {/* BUY PLAN / UPGRADE ICON BUTTON */}
+                      <button 
+                        onClick={() => setIsPlansOpen(true)}
+                        className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 hover:scale-105 transition-transform"
+                        title="Upgrade Plan"
+                      >
+                         <Crown className="w-5 h-5 text-white" />
                       </button>
 
-                      {/* Dropdown Profile Menu */}
-                      {showProfileMenu && (
-                          <div className="absolute right-0 top-14 w-72 bg-[#1A1D24] border border-white/10 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2">
-                              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/5">
-                                  <div className="w-12 h-12 rounded-full bg-indigo-600/20 flex items-center justify-center text-indigo-400 font-bold text-xl uppercase">
-                                     {userProfile?.name?.charAt(0)}
-                                  </div>
-                                  <div>
-                                      <h4 className="font-bold text-white text-sm">{userProfile?.name}</h4>
-                                      <p className="text-xs text-gray-500 truncate max-w-[150px]">{userProfile?.email}</p>
-                                  </div>
+                      <div className="relative">
+                          <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="w-10 h-10 rounded-full border border-white/10 p-0.5 hover:border-indigo-500 transition-colors">
+                              <div className="w-full h-full rounded-full bg-indigo-600/20 flex items-center justify-center text-indigo-400 font-black overflow-hidden uppercase">
+                                  {userProfile?.avatar ? <img src={userProfile.avatar} className="w-full h-full object-cover" alt="Profile" /> : userProfile?.name?.charAt(0)}
                               </div>
-                              <div className="grid grid-cols-2 gap-2 mb-4">
-                                  <div className="bg-black/30 p-2 rounded-lg text-center">
-                                      <div className="text-lg font-bold text-indigo-400">{userProfile?.credits}</div>
-                                      <div className="text-[9px] text-gray-500 uppercase font-bold">Credits</div>
+                          </button>
+
+                          {/* Dropdown Profile Menu */}
+                          {showProfileMenu && (
+                              <div className="absolute right-0 top-14 w-72 bg-[#1A1D24] border border-white/10 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2">
+                                  <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/5">
+                                      <div className="w-12 h-12 rounded-full bg-indigo-600/20 flex items-center justify-center text-indigo-400 font-bold text-xl uppercase">
+                                         {userProfile?.name?.charAt(0)}
+                                      </div>
+                                      <div>
+                                          <h4 className="font-bold text-white text-sm">{userProfile?.name}</h4>
+                                          <p className="text-xs text-gray-500 truncate max-w-[150px]">{userProfile?.email}</p>
+                                      </div>
                                   </div>
-                                  <div className="bg-black/30 p-2 rounded-lg text-center">
-                                      <div className="text-lg font-bold text-green-400">{userProfile?.sourceCodeCredits}</div>
-                                      <div className="text-[9px] text-gray-500 uppercase font-bold">Unlocks</div>
+                                  <div className="grid grid-cols-2 gap-2 mb-4">
+                                      <div className="bg-black/30 p-2 rounded-lg text-center">
+                                          <div className="text-lg font-bold text-indigo-400">{userProfile?.credits}</div>
+                                          <div className="text-[9px] text-gray-500 uppercase font-bold">Credits</div>
+                                      </div>
+                                      <div className="bg-black/30 p-2 rounded-lg text-center">
+                                          <div className="text-lg font-bold text-green-400">{userProfile?.sourceCodeCredits}</div>
+                                          <div className="text-[9px] text-gray-500 uppercase font-bold">Unlocks</div>
+                                      </div>
                                   </div>
-                              </div>
-                              <div className="space-y-2">
-                                  {user?.email === 'mbhia78@gmail.com' && (
-                                      <button onClick={() => { setIsAdminOpen(true); setShowProfileMenu(false); }} className="w-full flex items-center gap-2 p-3 rounded-xl hover:bg-white/5 text-xs font-bold text-gray-300">
-                                          <ShieldCheck className="w-4 h-4" /> Admin Panel
+                                  
+                                  <div className="space-y-2">
+                                      {/* AI Engine Settings */}
+                                      <button onClick={() => { setIsSettingsOpen(true); setShowProfileMenu(false); }} className="w-full flex items-center gap-2 p-3 rounded-xl bg-gradient-to-r from-indigo-600/20 to-blue-600/20 hover:from-indigo-600/30 hover:to-blue-600/30 border border-indigo-500/30 text-xs font-bold text-indigo-300">
+                                          <Settings className="w-4 h-4 text-indigo-400" /> Settings
                                       </button>
-                                  )}
-                                  <button onClick={() => logout()} className="w-full flex items-center gap-2 p-3 rounded-xl hover:bg-red-500/10 text-xs font-bold text-red-400">
-                                      <LogOut className="w-4 h-4" /> Sign Out
-                                  </button>
+
+                                      {user?.email === 'mbhia78@gmail.com' && (
+                                          <button onClick={() => { setIsAdminOpen(true); setShowProfileMenu(false); }} className="w-full flex items-center gap-2 p-3 rounded-xl hover:bg-white/5 text-xs font-bold text-gray-300">
+                                              <ShieldCheck className="w-4 h-4" /> Admin Panel
+                                          </button>
+                                      )}
+                                      
+                                      <div className="h-px bg-white/5 my-1"></div>
+
+                                      <button onClick={() => logout()} className="w-full flex items-center gap-2 p-3 rounded-xl hover:bg-red-500/10 text-xs font-bold text-red-400">
+                                          <LogOut className="w-4 h-4" /> Sign Out
+                                      </button>
+                                  </div>
                               </div>
-                          </div>
-                      )}
+                          )}
+                      </div>
                   </div>
               ) : (
                   <button onClick={() => setIsAuthOpen(true)} className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-900/30">
@@ -261,6 +285,8 @@ const Dashboard: React.FC = () => {
       )}
       {publishingId && <PublishModal isOpen={!!publishingId} onClose={() => setPublishingId(null)} projectId={publishingId} />}
       <SuperAdminPanel isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onOpenPlans={() => setIsPlansOpen(true)} />
+      <PlansModal isOpen={isPlansOpen} onClose={() => setIsPlansOpen(false)} />
     </div>
   );
 };

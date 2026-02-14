@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Editor, { OnMount, loader } from "@monaco-editor/react";
 import { useFile } from '../context/FileContext';
-import { Copy, Clipboard, Trash2, CheckSquare, PanelLeft, Code2 } from 'lucide-react';
+import { Copy, Clipboard, Trash2, CheckSquare, PanelLeft, Code2, Database } from 'lucide-react';
 
 // Configure Monaco loader to use a stable version from CDN to prevent "object Event" initialization errors
 loader.config({ 
@@ -14,9 +14,10 @@ loader.config({
 interface EditorWindowProps {
   onToggleSidebar?: () => void;
   isSidebarOpen?: boolean;
+  onOpenSettings?: () => void;
 }
 
-const EditorWindow: React.FC<EditorWindowProps> = ({ onToggleSidebar, isSidebarOpen }) => {
+const EditorWindow: React.FC<EditorWindowProps> = ({ onToggleSidebar, isSidebarOpen, onOpenSettings }) => {
   const { selectedFile, updateFileContent } = useFile();
   const [content, setContent] = useState('');
   const [isAllSelected, setIsAllSelected] = useState(false);
@@ -175,13 +176,20 @@ const EditorWindow: React.FC<EditorWindowProps> = ({ onToggleSidebar, isSidebarO
             
             <div className="flex items-center gap-2 bg-[#1e1e1e] p-1 rounded-lg border border-[#333]">
                 <button 
+                  onClick={onOpenSettings} 
+                  className="p-1.5 text-indigo-400 hover:text-white hover:bg-indigo-500/20 rounded-md transition-all flex items-center gap-1"
+                  title="Firebase SDK Config"
+                >
+                    <Database className="w-4 h-4" />
+                </button>
+                <div className="w-px h-4 bg-[#333]"></div>
+                <button 
                   onClick={selectAll} 
                   className={`p-1.5 rounded-md transition-all ${isAllSelected ? 'text-sky-400 bg-sky-500/10' : 'text-gray-400 hover:text-white hover:bg-white/10'}`} 
                   title="Select All"
                 >
                     <CheckSquare className="w-4 h-4" />
                 </button>
-                <div className="w-px h-4 bg-[#333]"></div>
                 <button onClick={copyToClipboard} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-md transition-all" title="Copy">
                     <Copy className="w-4 h-4" />
                 </button>
